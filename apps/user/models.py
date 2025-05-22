@@ -1,9 +1,8 @@
 from django.conf import settings
-from django.contrib.auth.models import UserManager
-from django.db import models
 
 # Create your models here.
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import UserManager
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
@@ -50,6 +49,7 @@ class UserRole(models.TextChoices):
     USER = "user", "사용자"
     LEADER = "leader", "리더"
     ADMIN = "admin", "운영자"
+
 
 class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아서 사용
     email = models.EmailField(

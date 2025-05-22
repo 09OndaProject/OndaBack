@@ -28,14 +28,18 @@ if settings.DEBUG:
     urlpatterns += [
         path("admin/", admin.site.urls),
         path(
-            "swagger<format>", schema_view.without_ui(cache_timeout=0), name="schema-json"
+            "swagger<format>",
+            schema_view.without_ui(cache_timeout=0),
+            name="schema-json",
         ),
         path(
             "swagger",
             schema_view.with_ui("swagger", cache_timeout=0),
             name="schema-swagger-ui",
         ),
-        path("redoc", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+        path(
+            "redoc", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
+        ),
     ]
 
 # 개발 서버에서 미디어 파일을 서빙하기 위해 설정
