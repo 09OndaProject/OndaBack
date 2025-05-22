@@ -159,10 +159,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Auth
-# AUTH_USER_MODEL = "user.User"  # 유저 모델 지정
-
-# LOGIN_URL = "/api/user/login/"
-# LOGOUT_REDIRECT_URL = "/api/user/login/"
+AUTH_USER_MODEL = "user.User"  # 유저 모델 지정
 
 # REST_FRAMEWORK 설정
 REST_FRAMEWORK = {
@@ -175,6 +172,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     # "ROTATE_REFRESH_TOKENS": True,  # 리프레시 토큰을 사용할 때마다 새로운 리프레시 토큰을 발급. 기본값 False
+    "UPDATE_LAST_LOGIN": True,  # 라스트 로그인 활성화
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     # It will work instead of the default serializer(TokenObtainPairSerializer).
@@ -189,21 +187,12 @@ SIMPLE_JWT = {
 # FRONTEND_URL = "http://127.0.0.1:8000/api"
 
 # 자동 슬래시 붙이는 기능 끄기
-# APPEND_SLASH = False
+APPEND_SLASH = False
 
 # 특정앱 스웨거에서 임시로 비활성화
 # config.schema.py에서 설정
 SWAGGER_EXCLUDED_APPS = [
     # "apps.user.views",
-    # "apps.idol.views",
-    # "apps.notification.views",
-    # "apps.post.views",
-    # "apps.comment.views",
-    # "apps.like.views",
-    # "apps.follow.views",
-    # "apps.image.views",
-    # "apps.idol_schedule.views",
-    # "apps.user_schedule.views",
 ]  # 제외할 앱 이름
 
 SWAGGER_SETTINGS = {
