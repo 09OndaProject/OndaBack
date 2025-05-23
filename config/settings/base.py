@@ -19,7 +19,7 @@ import certifi
 from dotenv import dotenv_values
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # dotenv_values 메서드는 env 파일의 경로를 파라미터로 전달 받아 해당 파일을 읽어온 후 Key, Value 형태로 매핑하여 dict로 반환합니다.
 ENV = dotenv_values(BASE_DIR / "envs/.env")
@@ -73,7 +73,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "config.urls.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {

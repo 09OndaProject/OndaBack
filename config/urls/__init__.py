@@ -1,3 +1,9 @@
-# from .urls_dev import *  # noqa: F403
+from ..settings.base import ENV
 
-# from .urls_prod import * # noqa: F403
+# "local", "prod" 중 하나가 환경변수로 주어짐
+env = ENV.get("DJANGO_ENV", "local")
+
+if env == "prod":
+    from .urls_prod import *  # noqa: F403
+else:
+    from .urls_dev import *  # noqa: F403
