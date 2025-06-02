@@ -215,5 +215,3 @@ SWAGGER_SETTINGS = {
         }
     },
 }
-
-# 테스트
