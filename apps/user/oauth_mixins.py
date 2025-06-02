@@ -3,6 +3,7 @@ from django.conf import settings
 
 from apps.user.models import Provider
 
+
 # 카카오
 class KaKaoProviderInfoMixin:
     def get_provider_info(self):
@@ -26,6 +27,7 @@ class KaKaoProviderInfoMixin:
             "frontend_redirect_url_test": "/api/users/oauth/callback-test",
         }
 
+
 # 구글
 class GoogleProviderInfoMixin:
     def get_provider_info(self):
@@ -48,6 +50,7 @@ class GoogleProviderInfoMixin:
             "frontend_redirect_url": f"{settings.FRONTEND_URL}/oauth/callback",
             "frontend_redirect_url_test": "/api/users/oauth/callback-test",
         }
+
 
 # 네이버
 class NaverProviderInfoMixin:

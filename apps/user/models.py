@@ -73,7 +73,9 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         verbose_name="이메일", max_length=50, unique=True
     )  # 로그인시 유저아이디 대신 사용
     name = models.CharField(verbose_name="이름", max_length=25, blank=True, null=True)
-    nickname = models.CharField(verbose_name="닉네임", max_length=25, blank=True, null=True)
+    nickname = models.CharField(
+        verbose_name="닉네임", max_length=25, null=True, unique=True
+    )
     phone_number = models.CharField(max_length=11, blank=True, null=True)
     date_of_birth = models.DateField(verbose_name="생년월일", blank=True, null=True)
     # profile_images = GenericRelation(File, related_query_name="profile_image")
