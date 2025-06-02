@@ -1,9 +1,11 @@
-from django.conf import settings
+from enum import IntEnum
 
-# Create your models here.
+from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
+# from apps.upload.models import File
 from utils.models import TimestampModel
 
 
@@ -11,7 +13,11 @@ from utils.models import TimestampModel
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **kwargs):
         if not email:
-            raise ValueError("올바른 이메일을 입력하세요.")
+            raise ValueError("이메일을 입력하세요.")
+        # if not kwargs.get('name'):
+        #     raise ValueError("이름을 입력하세요.")
+        # if not kwargs.get('nickname'):
+        #     raise ValueError("닉네임을 입력하세요.")
         user = self.model(email=self.normalize_email(email), **kwargs)
         user.set_password(password)  # 해시화
         user.is_active = True  # 기본값 False: 이메일 인증 후 활성화
@@ -19,8 +25,16 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **kwargs):
+        kwargs.update(
+            {  # 필수값 추가
+                "name": "admin",
+                "nickname": "admin",
+                "phone_number": "00000000000",
+                "date_of_birth": "2077-12-10",
+            }
+        )
         user = self.create_user(email, password, **kwargs)
-        user.role = UserRole.ADMIN
+        user.role = UserRole.ADMIN.value
         user.is_active = True
         user.save(using=self._db)
         return user
@@ -43,28 +57,42 @@ class UserManager(BaseUserManager):
 # SHA-256은 암호학에서 사용하는 해시 함수(haash function) 중 하나예요. 주로 데이터 무결성 확인, 비밀번호 저장, 디지털 서명, 블록체인 같은 곳에 쓰임.
 
 
-class UserRole(models.TextChoices):
-    USER = "user", "사용자"
-    LEADER = "leader", "리더"
-    ADMIN = "admin", "운영자"
+class UserRole(IntEnum):
+    ADMIN = 0  # 관리자  name:ADMIN  value:0
+    USER = 1  # 유저  name:USER  value:1
+    LEADER = 2  # 리더  name:LEADER  value:2
+
+
+class Provider(IntEnum):
+    HOME = 0  #   name:HOME  value:0
+    KAKAO = 1  # 카카오  name:KAKAO  value:1
 
 
 class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아서 사용
     email = models.EmailField(
         verbose_name="이메일", max_length=50, unique=True
     )  # 로그인시 유저아이디 대신 사용
-    name = models.CharField(verbose_name="이름", max_length=25)
-
-    # age_group
-    # location
-    # interest
-    # digital_level
-    role = models.CharField(
-        max_length=20,
-        choices=UserRole.choices,
-        default=UserRole.USER,
+    name = models.CharField(verbose_name="이름", max_length=25, blank=True, null=True)
+    nickname = models.CharField(
+        verbose_name="닉네임", max_length=25, null=True, unique=True
     )
-    last_login = models.DateTimeField(verbose_name="마지막 로그인", null=True)
+    phone_number = models.CharField(max_length=11, blank=True, null=True)
+    date_of_birth = models.DateField(verbose_name="생년월일", blank=True, null=True)
+    # profile_images = GenericRelation(File, related_query_name="profile_image")
+    # age_group = models.ForeignKey(Age_group, verbose_name="나이대", on_delete=models.PROTECT)
+    # area = models.ForeignKey(Area, verbose_name="지역", on_delete=models.PROTECT)
+    # interest = models.ForeignKey(Interest, verbose_name="관심사", on_delete=models.PROTECT)
+    # digital_level = models.ForeignKey(DigitalLevel, verbose_name="디지털 레벨", on_delete=models.PROTECT)
+    provider = models.PositiveSmallIntegerField(
+        verbose_name="제공자", default=Provider.HOME.value
+    )
+    role = models.PositiveSmallIntegerField(
+        verbose_name="권한", default=UserRole.USER.value
+    )
+
+    last_login = models.DateTimeField(
+        verbose_name="마지막 로그인", blank=True, null=True
+    )
 
     is_active = models.BooleanField(
         verbose_name="계정 활성화", default=False
@@ -84,6 +112,12 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         verbose_name = "유저"
         verbose_name_plural = f"{verbose_name} 목록"
 
+    def get_provider_display(self):
+        return Provider(self.provider).name.lower()
+
+    def get_role_display(self):
+        return UserRole(self.role).name.lower()
+
     def get_full_name(self):  # 사용자의 전체 이름(Full name)을 반환. 성과 이름을 합침
         # return f"{self.first_name} {self.last_name}"
         return self.name
@@ -98,11 +132,11 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
 
     @property
     def is_staff(self):
-        return self.role == UserRole.ADMIN
+        return self.role == UserRole.ADMIN.value
 
     @property
     def is_superuser(self):
-        return self.role == UserRole.ADMIN
+        return self.role == UserRole.ADMIN.value
 
     # 특정 권한(perm)에 대해 사용자가 권한을 가지고 있는지 판단
     def has_perm(self, perm, obj=None):
