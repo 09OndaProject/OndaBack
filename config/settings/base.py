@@ -19,7 +19,7 @@ import certifi
 from dotenv import dotenv_values
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # dotenv_values 메서드는 env 파일의 경로를 파라미터로 전달 받아 해당 파일을 읽어온 후 Key, Value 형태로 매핑하여 dict로 반환합니다.
 ENV = dotenv_values(BASE_DIR / "envs/.env")
@@ -52,6 +52,7 @@ DJANGO_APPS = [
 
 OWN_APPS = [
     "apps.user",
+    # "apps.upload",
 ]
 
 THIRD_PARTY_APPS = [
@@ -109,16 +110,19 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # 사용자 이름/이메일과 비슷한 비밀번호 거부
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",  # 기본 길이 8자
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",  # "password", "12345678" 등 일반적인 비밀번호 거부
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",  # 숫자만으로 구성된 비밀번호 거부
+    },
+    {
+        "NAME": "utils.custom_password_validation.NoKoreanPasswordValidator",  # 한글 입력 거부 커스텀
     },
 ]
 
@@ -166,6 +170,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    "DEFAULT_PAGINATION_CLASS": "utils.pagination.CustomPageNumberPagination",
 }
 
 # JWT 설정
@@ -176,7 +181,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     # It will work instead of the default serializer(TokenObtainPairSerializer).
-    "TOKEN_OBTAIN_SERIALIZER": "utils.jwt_serializers.WiStarTokenObtainPairSerializer",
+    "TOKEN_OBTAIN_SERIALIZER": "utils.jwt_serializers.OndaTokenObtainPairSerializer",
     # ...
 }
 
@@ -184,7 +189,7 @@ SIMPLE_JWT = {
 # FRONTEND_URL = "https://wistar.o-r.kr"
 # FRONTEND_URL = "http://localhost:5173"
 # 백엔드에서 임시로 테스트
-# FRONTEND_URL = "http://127.0.0.1:8000/api"
+FRONTEND_URL = "http://127.0.0.1:8000/api"
 
 # 자동 슬래시 붙이는 기능 끄기
 APPEND_SLASH = False
@@ -193,6 +198,7 @@ APPEND_SLASH = False
 # config.schema.py에서 설정
 SWAGGER_EXCLUDED_APPS = [
     # "apps.user.views",
+    # "apps.user.oauth_views_test",
 ]  # 제외할 앱 이름
 
 SWAGGER_SETTINGS = {
