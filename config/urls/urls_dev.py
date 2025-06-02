@@ -27,6 +27,7 @@ urlpatterns = [
     # path("api/", include("apps.upload.urls")),
     path("api/", include("apps.reviews.urls")),
     path("api/options/", include("apps.options.urls")),
+    path("api/leaders/", include("apps.leaders.urls")),
 ]
 
 if settings.DEBUG:
