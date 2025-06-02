@@ -82,9 +82,9 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
     date_of_birth = models.DateField(verbose_name="생년월일", blank=True, null=True)
     # profile_images = GenericRelation(File, related_query_name="profile_image")
     # age_group = models.ForeignKey(Age_group, verbose_name="나이대", on_delete=models.PROTECT)
-    # area = models.ForeignKey(Area, verbose_name="지역", on_delete=models.PROTECT)
-    # interest = models.ForeignKey(Interest, verbose_name="관심사", on_delete=models.PROTECT)
-    # digital_level = models.ForeignKey(DigitalLevel, verbose_name="디지털 레벨", on_delete=models.PROTECT)
+    area = models.ForeignKey(Area, verbose_name="지역", on_delete=models.PROTECT, null=True)
+    interest = models.ForeignKey(Interest, verbose_name="관심사", on_delete=models.PROTECT, null=True)
+    digital_level = models.ForeignKey(DigitalLevel, verbose_name="디지털 레벨", on_delete=models.PROTECT, null=True)
     provider = models.PositiveSmallIntegerField(
         verbose_name="제공자", default=Provider.HOME.value
     )

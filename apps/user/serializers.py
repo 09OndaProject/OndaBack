@@ -7,6 +7,10 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.options.serializers.area import AreaSerializer
+from apps.options.serializers.digital_level import DigitalLevelSerializer
+from apps.options.serializers.interest import InterestSerializer
+
 User = get_user_model()
 
 
@@ -20,9 +24,6 @@ class UsernameSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
-    # area = AreaSerializer()
-    # interest = InterestSerializer()
-    # digital_level = DigitalLevelSerializer()
 
     class Meta:
         model = User
@@ -36,9 +37,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             "phone_number",
             "date_of_birth",
             # "age_group",
-            # "area",
-            # "interest",
-            # "digital_level",
+            "area",
+            "interest",
+            "digital_level",
             # "image_url",
             # "created_at",
             # "updated_at",
@@ -101,10 +102,9 @@ class LogoutSerializer(serializers.Serializer):
 
 class UserListSerializer(serializers.ModelSerializer):
     # age_group = serializers.CharField(source="age_group.name", read_only=True)
-    # area = serializers.CharField(source="area.name", read_only=True)
-    # interest = serializers.CharField(source="interest.name", read_only=True)
-    # digital_level = serializers.CharField(source="digital_level.name", read_only=True)
-    # digital_level = serializers.CharField(source="digital_level.name", read_only=True)
+    area = serializers.CharField(source="area.name", read_only=True)
+    interest = serializers.CharField(source="interest.name", read_only=True)
+    digital_level = serializers.CharField(source="digital_level.name", read_only=True)
 
     class Meta:
         model = User
@@ -116,9 +116,9 @@ class UserListSerializer(serializers.ModelSerializer):
             "phone_number",
             "date_of_birth",
             # "age_group",
-            # "area",
-            # "interest",
-            # "digital_level",
+            "area",
+            "interest",
+            "digital_level",
             # "image_url",
             "created_at",
             "updated_at",
@@ -126,9 +126,9 @@ class UserListSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    # area = AreaSerializer()
-    # interest = InterestSerializer()
-    # digital_level = DigitalLevelSerializer()
+    area = AreaSerializer()
+    interest = InterestSerializer()
+    digital_level = DigitalLevelSerializer()
     # image_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -141,9 +141,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             "phone_number",
             "date_of_birth",
             # "age_group",
-            # "area",
-            # "interest",
-            # "digital_level",
+            "area",
+            "interest",
+            "digital_level",
             # "image_url",
             "created_at",
             "updated_at",
