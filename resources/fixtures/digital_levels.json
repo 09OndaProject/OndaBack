@@ -1,0 +1,26 @@
+[
+  {
+    "model": "options.digitallevel",
+    "pk": 1,
+    "fields": {
+      "level": 1,
+      "description": "디지털 기기 사용이 익숙함 (상)"
+    }
+  },
+  {
+    "model": "options.digitallevel",
+    "pk": 2,
+    "fields": {
+      "level": 2,
+      "description": "기본적인 디지털 기기 사용 가능 (중)"
+    }
+  },
+  {
+    "model": "options.digitallevel",
+    "pk": 3,
+    "fields": {
+      "level": 3,
+      "description": "디지털 기기 사용에 익숙하지 않음 (하)"
+    }
+  }
+]

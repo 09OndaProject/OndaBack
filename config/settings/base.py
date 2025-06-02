@@ -53,6 +53,8 @@ DJANGO_APPS = [
 OWN_APPS = [
     "apps.user",
     # "apps.upload",
+    "apps.options",
+    "apps.reviews",
 ]
 
 THIRD_PARTY_APPS = [
