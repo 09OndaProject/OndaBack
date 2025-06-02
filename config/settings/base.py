@@ -55,6 +55,7 @@ OWN_APPS = [
     # "apps.upload",
     "apps.options",
     "apps.reviews",
+    "apps.leaders",
     "apps.meet",
 ]
 
