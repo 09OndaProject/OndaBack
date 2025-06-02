@@ -52,7 +52,7 @@ DJANGO_APPS = [
 
 OWN_APPS = [
     "apps.user",
-    "apps.reviews",
+    "apps.options",
 ]
 
 THIRD_PARTY_APPS = [
