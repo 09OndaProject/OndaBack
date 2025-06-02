@@ -18,11 +18,12 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
-
+from django.urls import path,include
 from config.schema import schema_view  # 스웨거 설정 파일
 
-urlpatterns = []
+urlpatterns = [
+    path('api/meets/',include('meet.urls')),
+]
 
 if settings.DEBUG:
     urlpatterns += [
