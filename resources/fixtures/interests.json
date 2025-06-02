@@ -1,0 +1,72 @@
+[
+  {
+    "model": "options.interest",
+    "pk": 1,
+    "fields": {
+      "name": "건강관리 및 운동"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 2,
+    "fields": {
+      "name": "원예 및 자연"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 3,
+    "fields": {
+      "name": "디지털 배우기"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 4,
+    "fields": {
+      "name": "요리 및 음식 나눔"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 5,
+    "fields": {
+      "name": "자기계발 및 평생학습"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 6,
+    "fields": {
+      "name": "문화예술 감상 및 창작"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 7,
+    "fields": {
+      "name": "여행 및 지역 탐방"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 8,
+    "fields": {
+      "name": "봉사 및 재능기부"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 9,
+    "fields": {
+      "name": "여가 활동"
+    }
+  },
+  {
+    "model": "options.interest",
+    "pk": 10,
+    "fields": {
+      "name": "마음챙김 및 명상"
+    }
+  }
+]

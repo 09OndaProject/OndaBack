@@ -1,6 +1,6 @@
 import random
 
-from config.settings.base import ENV
+from config.settings.base import ENV, STATIC_URL
 
 # DEBUG = True
 DEBUG = False
