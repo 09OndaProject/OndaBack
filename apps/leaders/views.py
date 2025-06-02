@@ -25,6 +25,9 @@ class LeaderApplicationListCreateView(generics.ListCreateAPIView):
             return LeaderApplicationCreateSerializer
         return LeaderApplicationListSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
     @swagger_auto_schema(
         tags=["리더신청"],
         operation_summary="리더 신청 (일반 사용자)",
