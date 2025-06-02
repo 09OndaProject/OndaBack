@@ -7,18 +7,24 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('options', '0001_initial'),
+        ("options", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='area',
-            name='name',
+            model_name="area",
+            name="name",
             field=models.CharField(max_length=100),
         ),
         migrations.AlterField(
-            model_name='area',
-            name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='children', to='options.area'),
+            model_name="area",
+            name="parent",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="children",
+                to="options.area",
+            ),
         ),
     ]
