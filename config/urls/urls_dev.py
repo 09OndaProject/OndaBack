@@ -27,7 +27,7 @@ urlpatterns = [
     # path("api/", include("apps.upload.urls")),
     path("api/", include("apps.reviews.urls")),
     path("api/options/", include("apps.options.urls")),
-    path('api/meets/',include('meet.urls')),
+    path("api/meets/", include("meet.urls")),
 ]
 
 if settings.DEBUG:
