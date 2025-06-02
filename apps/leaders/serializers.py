@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from apps.leaders.models import LeaderApplication, PreviousActivity
 
 
@@ -25,7 +26,9 @@ class LeaderApplicationCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if not data.get("certificate_type"):
-            raise serializers.ValidationError({"certificate_type": "자격증 종류를 선택해주세요."})
+            raise serializers.ValidationError(
+                {"certificate_type": "자격증 종류를 선택해주세요."}
+            )
         return data
 
     def create(self, validated_data):
@@ -81,5 +84,7 @@ class LeaderApplicationStatusUpdateSerializer(serializers.ModelSerializer):
 
     def validate_status(self, value):
         if value not in ["approved", "rejected"]:
-            raise serializers.ValidationError("status는 'approved' 또는 'rejected'만 가능합니다.")
+            raise serializers.ValidationError(
+                "status는 'approved' 또는 'rejected'만 가능합니다."
+            )
         return value
