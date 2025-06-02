@@ -7,11 +7,9 @@ from apps.meet.models import Meet
 
 class Review(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews"
     )
-    meet = models.ForeignKey(
-        Meet, on_delete=models.CASCADE, related_name='reviews'
-    )
+    meet = models.ForeignKey(Meet, on_delete=models.CASCADE, related_name="reviews")
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
@@ -22,7 +20,7 @@ class Review(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ['user', 'meet']
+        unique_together = ["user", "meet"]
 
     def __str__(self):
         return f"{self.user} - {self.meet} ({self.rating}점)"

@@ -23,7 +23,7 @@ from django.urls import include, path
 from config.schema import schema_view  # 스웨거 설정 파일
 
 urlpatterns = [
-    path('api/', include('apps.reviews.urls')),
+    path("api/", include("apps.reviews.urls")),
 ]
 
 if settings.DEBUG:

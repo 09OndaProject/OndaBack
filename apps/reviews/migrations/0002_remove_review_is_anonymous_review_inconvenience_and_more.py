@@ -7,27 +7,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reviews', '0001_initial'),
+        ("reviews", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='review',
-            name='is_anonymous',
+            model_name="review",
+            name="is_anonymous",
         ),
         migrations.AddField(
-            model_name='review',
-            name='inconvenience',
+            model_name="review",
+            name="inconvenience",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='content',
+            model_name="review",
+            name="content",
             field=models.TextField(max_length=500),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='rating',
-            field=models.PositiveSmallIntegerField(validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(5)]),
+            model_name="review",
+            name="rating",
+            field=models.PositiveSmallIntegerField(
+                validators=[
+                    django.core.validators.MinValueValidator(1),
+                    django.core.validators.MaxValueValidator(5),
+                ]
+            ),
         ),
     ]
