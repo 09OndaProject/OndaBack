@@ -21,7 +21,7 @@ class Meet(models.Model):
     contact = models.CharField(max_length=255, null=True, blank=True)
     max_people = models.IntegerField(null=True, blank=True)
     current_people = models.IntegerField(default=0)
-    file = GenericRelation("Image")
+    # file = GenericRelation("Image")
     application_deadline = models.DateTimeField()
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -5,6 +5,8 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
+from apps.options.models import Area, DigitalLevel, Interest
+
 # from apps.upload.models import File
 from utils.models import TimestampModel
 

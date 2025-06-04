@@ -55,7 +55,8 @@ OWN_APPS = [
     # "apps.upload",
     "apps.options",
     "apps.reviews",
-    "apps.meet"
+    "apps.leaders",
+    "apps.meet",
 ]
 
 THIRD_PARTY_APPS = [
