@@ -2,7 +2,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
-
+from options.models import *
 User = get_user_model()
 
 
@@ -10,11 +10,11 @@ class Meet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
-    area = models.ForeignKey("Area", on_delete=models.SET_NULL, null=True)
+    area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True)
     digital_level = models.ForeignKey(
-        "DigitalLevel", on_delete=models.SET_NULL, null=True
+        DigitalLevel, on_delete=models.SET_NULL, null=True
     )
-    interest = models.ForeignKey("Interest", on_delete=models.SET_NULL, null=True)
+    interest = models.ForeignKey(Interest, on_delete=models.SET_NULL, null=True)
     date = models.DateField(null=True, blank=True)
     time = models.TimeField(null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
