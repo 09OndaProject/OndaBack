@@ -48,7 +48,6 @@ from utils.permissions import AdminOnly
 # 회원 가입
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
-    # queryset = User.objects.select_related("area","interest","digital_level")
     serializer_class = RegisterSerializer  # Serializer
 
     @swagger_auto_schema(
@@ -468,13 +467,12 @@ class CustomTokenRefreshView(APIView):
 
 # 유저 목록/검색 (관리자)
 class UserListView(ListAPIView):
-    queryset = User.objects.all()
-    # queryset = User.objects.only("id")
-    # queryset = User.objects.select_related("area","interest","digital_level")
+    # queryset = User.objects.all()
+    queryset = User.objects.select_related("area", "interest", "digital_level", "file")
     serializer_class = UserListSerializer
     # permission_classes = [IsAuthenticated]
-    # permission_classes = [AdminOnly]
-    # authentication_classes = [JWTAuthentication]  # JWT 인증
+    permission_classes = [AdminOnly]
+    authentication_classes = [JWTAuthentication]  # JWT 인증
     pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):
@@ -500,13 +498,13 @@ class UserListView(ListAPIView):
             q &= Q(date_of_birth=date_of_birth)  # 정확 일치
 
         if area := query.get("area"):
-            q &= Q(area__name__icontains=area)  # 외래키 이름 검색 가정
+            q &= Q(area__id=area)  # 외래키 이름 검색 가정
 
         if interest := query.get("interest"):
-            q &= Q(interest__name__icontains=interest)
+            q &= Q(interest__id=interest)
 
         if digital_level := query.get("digital_level"):
-            q &= Q(digital_level__name__icontains=digital_level)
+            q &= Q(digital_level__id=digital_level)
 
         if role := query.get("role"):
             try:
@@ -562,6 +560,18 @@ class UserListView(ListAPIView):
                 description="지역 ID",
                 type=openapi.TYPE_INTEGER,
             ),
+            openapi.Parameter(
+                "interest",
+                openapi.IN_QUERY,
+                description="관심사 ID",
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "digital_level",
+                openapi.IN_QUERY,
+                description="디지털 레벨 ID",
+                type=openapi.TYPE_INTEGER,
+            ),
         ],
     )
     def get(self, request, *args, **kwargs):
@@ -590,7 +600,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
     http_method_names = ["get", "patch", "delete"]  # ← PUT 제외
 
     def get_queryset(self):
-        if self.action == "destroy":
+        if self.request.method == "DELETE":
             return User.objects.only("id")
         return super().get_queryset()
 
@@ -640,7 +650,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        return Response({"message": "프로필 정보를 불러왔습니다.", **serializer.data})
+        return Response({"message": "유저 정보를 불러왔습니다.", **serializer.data})
 
     @swagger_auto_schema(
         tags=["유저/프로필"],

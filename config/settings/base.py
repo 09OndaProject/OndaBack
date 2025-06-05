@@ -52,7 +52,7 @@ DJANGO_APPS = [
 
 OWN_APPS = [
     "apps.user",
-    # "apps.upload",
+    "apps.upload",
     "apps.options",
     "apps.reviews",
     "apps.leaders",
@@ -114,7 +114,10 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # 사용자 이름/이메일과 비슷한 비밀번호 거부
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # username, first_name, last_name, email과 비슷한 비밀번호 거부
+        "OPTIONS": {
+            "user_attributes": ("email", "name")  # 커스텀 유저 모델의 'name' 필드 포함
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",  # 기본 길이 8자
