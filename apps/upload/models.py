@@ -196,8 +196,10 @@ class File(models.Model):
     #     return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
+        print("delete1")
         # 실제 파일이 존재하면 삭제
         if self.file and os.path.isfile(self.file.path):
+            print("delete2")
             self.file.delete(save=False)
         # DB 레코드 삭제
         super().delete(*args, **kwargs)

@@ -72,9 +72,7 @@ class Provider(IntEnum):
     KAKAO = 1  # 카카오  name:KAKAO  value:1
 
 
-class User(
-    FileCleanupMixin, AbstractBaseUser, TimestampModel
-):  # 기본 기능은 상속받아서 사용
+class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아서 사용
     email = models.EmailField(
         verbose_name="이메일", max_length=50, unique=True
     )  # 로그인시 유저아이디 대신 사용

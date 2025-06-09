@@ -156,8 +156,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             "interest",
             "digital_level",
             "file",
-            "created_at",
-            "updated_at",
         ]
 
     # serializer.data 출력 값 변환
@@ -165,6 +163,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         if phone_number := data.get("phone_number"):
             data["phone_number"] = format_phone(phone_number)
+        return data
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
