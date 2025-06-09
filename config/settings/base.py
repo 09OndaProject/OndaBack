@@ -57,6 +57,7 @@ OWN_APPS = [
     "apps.reviews",
     "apps.leaders",
     "apps.meet",
+    "apps.posts",
 ]
 
 THIRD_PARTY_APPS = [
