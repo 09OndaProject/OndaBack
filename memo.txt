@@ -1422,6 +1422,9 @@ sudo chmod +x /home/ec2-user
 sudo chmod +x /home/ec2-user/WiStarBack
 sudo chmod +x /home/ec2-user/WiStarBack/.static_root
 
+sudo chmod +x /home/ubuntu
+sudo chmod +x /home/ubuntu/OndaBack
+sudo chmod +x /home/ubuntu/OndaBack/.static_root
 
 http://3.39.10.22/redoc/
 http://3.39.10.22/swagger/
