@@ -1,17 +1,20 @@
-from rest_framework import generics, permissions, filters
-from .models import Post
-from .serializers import PostSerializer
+from rest_framework import filters, generics, permissions
 from rest_framework.exceptions import PermissionDenied
 
+from .models import Post
+from .serializers import PostSerializer
+
+
 class PostListCreateView(generics.ListCreateAPIView):
-    queryset = Post.objects.all().order_by('-created_at')
+    queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['title', 'content']
+    search_fields = ["title", "content"]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
