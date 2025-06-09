@@ -1024,11 +1024,11 @@ sudo vi ~/.ssh/id_rsa.pub
 
 아래의 명령어를 입력하여 작성한 코드를 클론 받습니다.
 git clone --branch develop --single-branch <레포지토리 주소>
-git clone --branch prod/test2 --single-branch https://github.com/09-MainProject/WiStarBack.git
+git clone --branch feature/user --single-branch https://github.com/09OndaProject/OndaBack.git
 
 프로젝트 경로로 이동
 cd <프로젝트 루트 디렉터리>
-cd WiStarBack
+cd OndaBack
 
 settings.py 심볼릭 링크를 생성합니다.
 ln -sf config/settings/prod.py config/settings/settings.py
@@ -1045,7 +1045,7 @@ vi .env.prod
 
 # pyenv 가상환경 생성
 pyenv virtualenv <python-version> 가상환경이름
-pyenv virtualenv 3.13.1 wistar
+pyenv virtualenv 3.13.1 onda
 
 # 가상환경 적용
 pyenv local 가상환경이름
@@ -1062,6 +1062,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 vi ~/.bashrc
 
 # 아래의 내용을 .bashrc에 추가해줍니다.
+# poetry
 export PATH="/home/ubuntu/.local/bin:$PATH"
 
 # 터미널 재실행
