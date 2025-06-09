@@ -2,8 +2,8 @@ import random
 
 from config.settings.base import ENV, STATIC_URL
 
-# DEBUG = True
-DEBUG = False
+DEBUG = True
+# DEBUG = False
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
