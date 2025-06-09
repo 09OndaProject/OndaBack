@@ -37,7 +37,7 @@ if ENV.get("DJANGO_ENV", "local") == "local":
 DEBUG = True
 
 # ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['13.209.4.19']
 
 # Application definition
 
