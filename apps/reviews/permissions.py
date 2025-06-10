@@ -1,7 +1,9 @@
 from datetime import timedelta
+
 from django.utils import timezone
-from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import SAFE_METHODS, BasePermission
+
 
 class IsOwnerOrReadOnlyWithin7Days(BasePermission):
     """

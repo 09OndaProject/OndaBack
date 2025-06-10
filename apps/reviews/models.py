@@ -4,11 +4,14 @@ from django.db import models
 
 from apps.meet.models import Meet
 
+
 class Review(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews"
     )
-    meet = models.ForeignKey(Meet, on_delete=models.CASCADE, related_name="reviews")  # ✅ 주석 해제
+    meet = models.ForeignKey(
+        Meet, on_delete=models.CASCADE, related_name="reviews"
+    )  # ✅ 주석 해제
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
