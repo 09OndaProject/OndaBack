@@ -72,7 +72,7 @@ class ReviewSummaryView(generics.GenericAPIView):
         )
 
 
-# 후기 목록 + 작성
+# 후기 목록 / 작성
 class ReviewListCreateView(generics.ListCreateAPIView):
     serializer_class = ReviewDisplaySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

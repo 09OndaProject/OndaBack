@@ -9,9 +9,7 @@ class Review(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews"
     )
-    meet = models.ForeignKey(
-        Meet, on_delete=models.CASCADE, related_name="reviews"
-    )  # ✅ 주석 해제
+    meet = models.ForeignKey(Meet, on_delete=models.CASCADE, related_name="reviews")
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
@@ -22,7 +20,13 @@ class Review(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ["user", "meet"]  # ✅ 중복 리뷰 방지용 (선택)
+        unique_together = ["user", "meet"]  # 중복 리뷰 방지
+        indexes = [
+            models.Index(fields=["meet"]),
+            models.Index(fields=["user", "meet"]),
+            models.Index(fields=["-created_at"]),
+            models.Index(fields=["-rating"]),
+        ]
 
     def __str__(self):
-        return f"{self.user} - {self.meet} ({self.rating}점)"  # ✅ 가독성용
+        return f"{self.user} - {self.meet} ({self.rating}점)"
