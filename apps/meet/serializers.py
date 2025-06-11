@@ -22,6 +22,7 @@ class MeetSerializer(serializers.ModelSerializer):
             "contact",
             "max_people",
             "current_people",
+            # "file",
             "status",
             "application_deadline",
             "created_at",
