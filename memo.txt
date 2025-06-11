@@ -1509,6 +1509,7 @@ develop 브랜치에 pr적용할 때 원하는 대상만 적용하고 싶으면
 git checkout develop  # 병합 대상 브랜치
 git fetch origin pull/36/head:pr-36  #pr을 불러옴
 git merge pr-36 --no-commit --no-ff
+git merge pr-19 --no-ff
 
 원하는 파일 적용 및 해제
 git restore --staged apps/user_schedule/migrations/000X_*.py
