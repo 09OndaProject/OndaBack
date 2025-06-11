@@ -38,7 +38,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 DJANGO_APPS = [
@@ -52,7 +51,7 @@ DJANGO_APPS = [
 
 OWN_APPS = [
     "apps.user",
-    # "apps.upload",
+    "apps.upload",
     "apps.options",
     "apps.reviews",
     "apps.leaders",
@@ -64,6 +63,7 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt",  # poetry add djangorestframework-simplejwt
     "rest_framework_simplejwt.token_blacklist",
     "drf_yasg",
+    "storages",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + OWN_APPS + THIRD_PARTY_APPS
@@ -114,7 +114,10 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # 사용자 이름/이메일과 비슷한 비밀번호 거부
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # username, first_name, last_name, email과 비슷한 비밀번호 거부
+        "OPTIONS": {
+            "user_attributes": ("email", "name")  # 커스텀 유저 모델의 'name' 필드 포함
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",  # 기본 길이 8자
@@ -148,13 +151,13 @@ USE_TZ = True
 
 # 개발 환경에서 사용하는 경로
 STATIC_URL = "static/"
+# 장고가 자동으로 정적파일을 서빙해주는 경로 (gunicorn실행시 적용안됨)
 STATIC_DIR = BASE_DIR / "static"
-
 STATICFILES_DIRS = [
     STATIC_DIR,
 ]
 
-# 배포할 때 사용하는 경로
+# collectstatic하면 해당 경로로 정적 파일이 복사됨
 STATIC_ROOT = BASE_DIR / ".static_root"
 
 # Media

@@ -926,7 +926,8 @@ class CustomCSRFMiddleware:
 -----------------------------
 Ubuntu 서버에서 CI/CD 사용해 배포 설정하기
 -----------------------------
-ssh -i ~/Downloads/wistar.pem ubuntu@43.203.181.6
+ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.4.19
+chmod 400 ~/Downloads/onda-key-aws.pem
 
 mv ~/Downloads/wistar.pem ~/.ssh
 # 만약 ~/.ssh 경로가없다면 .ssh 폴더를 생성해줘야합니다.
@@ -938,10 +939,10 @@ mkdir ~/.ssh
 cd ~/.ssh
 ls -l
 
-chmod 400 wistar.pem   # 읽기 모드 설정 추천 600은 읽기/쓰기
+chmod 400 onda-key-aws.pem   # 읽기 모드 설정 추천 600은 읽기/쓰기
 ls -l
 
-ssh -i ~/.ssh/wistar.pem ubuntu@43.203.181.6
+ssh -i ~/.ssh/onda-key-aws.pem ubuntu@43.203.181.6
 
 Pyenv 설치 및 설정
 sudo apt-get update --fix-missing
@@ -982,6 +983,14 @@ Ubuntu 사용자 계정의 Bash 셸 설정 파일을 편집
 # vi 에디터로 .bashrc 편집하기
 sudo vi ~/.bashrc
 
+# .bashrc 수정하기
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
 # 터미널 재실행
 source ~/.bashrc
 
@@ -1011,13 +1020,15 @@ ssh-add -k ~/.ssh/id_rsa
 아래의 명령어를 입력하여 id_rsa.pub 파일을 열어 이메일 앞쪽의 키값만 복사합니다.
 sudo vi ~/.ssh/id_rsa.pub
 
+이후에 깃허브 계정 설정에서 SSH key를 추가합니다.
+
 아래의 명령어를 입력하여 작성한 코드를 클론 받습니다.
 git clone --branch develop --single-branch <레포지토리 주소>
-git clone --branch prod/test2 --single-branch https://github.com/09-MainProject/WiStarBack.git
+git clone --branch feature/user --single-branch https://github.com/09OndaProject/OndaBack.git
 
 프로젝트 경로로 이동
 cd <프로젝트 루트 디렉터리>
-cd WiStarBack
+cd OndaBack
 
 settings.py 심볼릭 링크를 생성합니다.
 ln -sf config/settings/prod.py config/settings/settings.py
@@ -1034,7 +1045,7 @@ vi .env.prod
 
 # pyenv 가상환경 생성
 pyenv virtualenv <python-version> 가상환경이름
-pyenv virtualenv 3.13.1 wistar
+pyenv virtualenv 3.13.1 onda
 
 # 가상환경 적용
 pyenv local 가상환경이름
@@ -1051,6 +1062,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 vi ~/.bashrc
 
 # 아래의 내용을 .bashrc에 추가해줍니다.
+# poetry
 export PATH="/home/ubuntu/.local/bin:$PATH"
 
 # 터미널 재실행
@@ -1157,6 +1169,7 @@ cd /etc/nginx/sites-available
 sudo rm default
 # 새로운 설정파일 추가
 sudo vi django.conf
+sudo vi /etc/nginx/sites-available/django.conf
 
 # 아래의 내용을 입력 후 :wq
 server {
@@ -1188,7 +1201,7 @@ sudo vi /etc/nginx/nginx.conf
 # 상단의 'user www-data'를 'user ubuntu'로 변경 후 :wq
 
 # syetemctl 을 사용하여 nginx 서비스 시작
-sudo systemctl restart nginx.service
+sudo systemctl reload nginx.service
 
 # syetemctl 을 사용하여 nginx 서비스 상태확인
 sudo systemctl status nginx.service
@@ -1312,7 +1325,6 @@ python3 manage.py migrate
 python3 manage.py createsuperuser
 
 
-
 컨테이너 정지 및 제거
 sudo docker-compose -f docker-compose-prod.yml down
 
@@ -1375,23 +1387,6 @@ sudo systemctl reload nginx
 scp -i ~/Downloads/your-key.pem -r .static_root/ ec2-user@3.39.10.22:/home/ec2-user/WiStarBack/
 scp -i ~/Downloads/wistar.pem -r .static_root/ ec2-user@3.39.10.22:/home/ec2-user/WiStarBack/
 
-server {
-    listen 80;
-    server_name _;
-
-    location /static/ {
-        alias /home/ec2-user/WiStarBack/.static_root/;
-        access_log off;
-        expires max;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-
 에러 로그 확인
 sudo tail -n 100 /var/log/nginx/error.log
 
@@ -1406,14 +1401,12 @@ sudo systemctl reload nginx
 
 nginx 권한 설정
 sudo chmod +x /home
-sudo chmod +x /home/ec2-user
-sudo chmod +x /home/ec2-user/WiStarBack
-sudo chmod +x /home/ec2-user/WiStarBack/.static_root
-
+sudo chmod +x /home/ubuntu
+sudo chmod +x /home/ubuntu/OndaBack
+sudo chmod +x /home/ubuntu/OndaBack/.static_root
 
 http://3.39.10.22/redoc/
 http://3.39.10.22/swagger/
-
 
 커밋 로그 안남기고 최신 커밋에 합치는법
 git add .
@@ -1528,8 +1521,6 @@ git commit -m "PR #36 수동 병합 (마이그레이션 제외)"
 원격 브랜치에 적용
 git push
 
-
-
 도커 컨테이너 접속
 docker exec -it wistarback bash
 
@@ -1597,3 +1588,61 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 rds에 접속
 psql -h <RDS_ENDPOINT> -u <username> -p
 
+
+s3 버킷 정책 설정
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "*"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::본인 버킷 이름/*"
+        }
+    ]
+}
+
+이렇게 실행시 서버 실행 오류 확인 가능
+gunicorn config.wsgi:application
+
+# 개발 환경에서 사용하는 경로
+STATIC_URL = "static/"
+# 장고가 자동으로 정적파일을 서빙해주는 경로 (gunicorn실행시 적용안됨)
+STATIC_DIR = BASE_DIR / "static"
+STATICFILES_DIRS = [
+    STATIC_DIR,
+]
+
+# collectstatic하면 해당 경로로 정적 파일이 복사됨
+STATIC_ROOT = BASE_DIR / ".static_root"
+
+gunicorn을 사용한 배포시 django가 자동으로 정적 파일을 서빙하지 않기 때문에
+collectstatic해서 정적 파일을 복사한 후 nginx를 통해서 서빙
+
+nginx 설정 시
+include proxy_params;
+이렇게 설정하면 아래 내용 포함
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+/etc/nginx/ 경로에 위 내용을 포함한 proxy_params 파일이 존재
+/etc/nginx/proxy_params
+
+각 헤더의 역할
+Host : 클라이언트가 요청한 원래 호스트 이름 유지
+X-Real-IP : 클라이언트의 실제 IP 주소 전달
+X-Forwarded-For : 프록시를 거쳐온 클라이언트 IP 리스트 전달
+X-Forwarded-Proto : 요청의 원래 프로토콜(http 또는 https) 전달
+
+proxy_pass 설정
+1. proxy_pass http://127.0.0.1:8000;
+ - TCP 통신: Nginx가 Gunicorn에 **IP 주소 + 포트번호(8000)**로 요청을 보냅니다.
+ - 일반적이고 직관적이며 디버깅이 쉬움
+2. proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+Unix 도메인 소켓 통신: 로컬 파일 시스템 경로(/srv/gunicorn/gunicorn.sock)를 통해 Gunicorn과 통신합니다.
+ - 성능 우수 (TCP보다 CPU 오버헤드가 낮음)
+ - 보안 우수 (외부에서 직접 접근 불가)
