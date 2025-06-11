@@ -10,6 +10,11 @@ from django.utils import timezone
 # from apps.file.models import *
 User = get_user_model()
 
+STATUS_CHOICES = (
+    ("모집중", "모집중"),
+    ("마감", "마감"),
+)
+
 
 class Meet(TimestampModel):
     @property

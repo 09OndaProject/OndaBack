@@ -6,6 +6,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
 from apps.options.models import Area, DigitalLevel, Interest
+from apps.upload.models import File
+from utils.mixins import FileCleanupMixin
 
 # from apps.upload.models import File
 from utils.models import TimestampModel
@@ -80,11 +82,31 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
     )
     phone_number = models.CharField(max_length=11, blank=True, null=True)
     date_of_birth = models.DateField(verbose_name="생년월일", blank=True, null=True)
-    # profile_images = GenericRelation(File, related_query_name="profile_image")
-    # age_group = models.ForeignKey(Age_group, verbose_name="나이대", on_delete=models.PROTECT)
-    # area = models.ForeignKey(Area, verbose_name="지역", on_delete=models.PROTECT)
-    # interest = models.ForeignKey(Interest, verbose_name="관심사", on_delete=models.PROTECT)
-    # digital_level = models.ForeignKey(DigitalLevel, verbose_name="디지털 레벨", on_delete=models.PROTECT)
+    file = models.OneToOneField(
+        "upload.File", on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    # age_group = models.ForeignKey("options.Age_group", verbose_name="나이대", on_delete=models.SET_NULL)
+    area = models.ForeignKey(
+        "options.Area",
+        verbose_name="지역",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="+",
+    )
+    interest = models.ForeignKey(
+        "options.Interest",
+        verbose_name="관심사",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="+",
+    )
+    digital_level = models.ForeignKey(
+        "options.DigitalLevel",
+        verbose_name="디지털 레벨",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="+",
+    )
     provider = models.PositiveSmallIntegerField(
         verbose_name="제공자", default=Provider.HOME.value
     )
@@ -102,12 +124,11 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
 
     # 사용자 지정 메니져
     # User.objects.all()   <- objects가 메니져
-    objects = UserManager()  # 메니져는 UserManager()
+    objects = UserManager()  # 메니져는 커스텀한 UserManager()
 
-    #
     USERNAME_FIELD = "email"  # 기본 유저네임(아이디)를 email로 지정
-    EMAIL_FIELD = "email"
-    REQUIRED_FIELDS = []
+    EMAIL_FIELD = "email"  # send_email() 같은 메서드가 user.email을 자동으로 사용, PasswordResetForm 등에서 유효한 이메일 필드를 찾아내는 데 사용됨
+    REQUIRED_FIELDS = []  # createsuperuser 명령어에서 추가로 입력을 요구할 필드 목록
 
     class Meta:
         db_table = "user"

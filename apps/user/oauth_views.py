@@ -98,7 +98,7 @@ class OAuthCallbackView(APIView, ABC):
         if not code or not state:
             return Response({"detail": "코드 또는 스테이트가 없습니다."}, status=400)
 
-        # 콜백에서 검증 (시간 제한 없이)
+        # state 검증 (시간 제한 없이)
         try:
             state = signing.loads(state)
         except BadSignature:
@@ -109,11 +109,8 @@ class OAuthCallbackView(APIView, ABC):
         # 소셜로그인에 필요한 redirect_uri, client_id, grant_type 등의 provider_info 를 가져옴
         provider_info = self.get_provider_info()
 
-        # state 검증 로직 필요 시 추가 (ex. signing.loads)
-
         # 엑세스 토큰 요청
-        token_response = self.get_access_token(code, state, provider_info)
-        print("1111", token_response.status_code)
+        token_response = self.get_access_token(code, provider_info)
         if token_response.status_code != 200:
             return Response({"detail": "토큰을 가져올 수 없습니다."}, status=401)
 
@@ -172,7 +169,7 @@ class OAuthCallbackView(APIView, ABC):
         return response
 
     # 엑세스 토큰 가져오는 메서드
-    def get_access_token(self, code, state, provider_info):
+    def get_access_token(self, code, provider_info):
         """
         requests 라이브러리를 활용하여 Oauth2 API 플랫폼에 액세스 토큰을 요청하는 함수
         """
@@ -183,7 +180,6 @@ class OAuthCallbackView(APIView, ABC):
                 data={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "state": state,
                     "redirect_uri": settings.FRONTEND_URL
                     + provider_info["callback_url"],
                     "client_id": provider_info["client_id"],
@@ -196,7 +192,6 @@ class OAuthCallbackView(APIView, ABC):
                 params={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "state": state,
                     "client_id": provider_info["client_id"],
                     "client_secret": provider_info["client_secret"],
                 },
@@ -229,14 +224,6 @@ class OAuthCallbackView(APIView, ABC):
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
             return email, name, nickname
-
-    # 성공 프론트 리다이렉트 url
-    def get_frontend_success_url(self):
-        return f"{self.get_provider_info()['frontend_redirect_url']}"
-
-    # 실패 프론트 리다이렉트 url
-    def get_frontend_fail_url(self):
-        return f"{self.get_provider_info().get('frontend_fail_url', self.get_frontend_success_url())}"
 
 
 # 카카오 로그인

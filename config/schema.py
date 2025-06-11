@@ -24,9 +24,9 @@ class ExcludeAppsSchemaGenerator(OpenAPISchemaGenerator):
 # 스웨거 초기화
 schema_view = get_schema_view(
     openapi.Info(
-        title="WiStar API",
+        title="Onda API",
         default_version="v1",
-        description="WiStar API 문서",
+        description="Onda API 문서",
         terms_of_service="https://www.google.com/policies/terms/",
         contact=openapi.Contact(email="xowls0131@naver.com"),
         license=openapi.License(name="BSD License"),

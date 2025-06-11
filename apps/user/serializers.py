@@ -1,11 +1,17 @@
 import re
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from apps.options.serializers.area import AreaSerializer
+from apps.options.serializers.digital_level import DigitalLevelSerializer
+from apps.options.serializers.interest import InterestSerializer
+from apps.upload.serializers import FileSerializer
 
 User = get_user_model()
 
@@ -20,67 +26,72 @@ class UsernameSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
-    # area = AreaSerializer()
-    # interest = InterestSerializer()
-    # digital_level = DigitalLevelSerializer()
 
     class Meta:
         model = User
         fields = [
             "id",
-            "email",
             "password",
+            "email",
             "password_confirm",
             "name",
             "nickname",
             "phone_number",
             "date_of_birth",
             # "age_group",
-            # "area",
-            # "interest",
-            # "digital_level",
-            # "image_url",
+            "area",
+            "interest",
+            "digital_level",
+            "file",
             # "created_at",
             # "updated_at",
         ]
         read_only_fields = ["id"]
         extra_kwargs = {
-            "email": {"write_only": True},
             "password": {"write_only": True},
             "password_confirm": {"write_only": True},
-            "name": {"write_only": True},
-            "nickname": {"write_only": True},
-            "phone_number": {"write_only": True},
-            "date_of_birth": {"write_only": True},
         }
+
+        if not settings.DEBUG:
+            extra_kwargs.update(
+                {
+                    "email": {"write_only": True},
+                    "name": {"write_only": True},
+                    "nickname": {"write_only": True},
+                    "phone_number": {"write_only": True},
+                    "date_of_birth": {"write_only": True},
+                    "area": {"write_only": True},
+                    "interest": {"write_only": True},
+                    "digital_level": {"write_only": True},
+                    "file": {"write_only": True},
+                }
+            )
 
     # 데이터 검증
     def validate(self, data):
+        password = data.get("password")
+        password_confirm = data.get("password_confirm")
+        phone_number = data.get("phone_number")
+
         # 비밀번호 일치 여부 확인
-        if data["password"] != data["password_confirm"]:
-            raise ValidationError({"detail": "비밀번호가 일치하지 않습니다."})
-        data.pop("password_confirm")  # 모델에 없는 필드 제거
+        if password_confirm:
+            if password != password_confirm:
+                raise serializers.ValidationError(
+                    {"detail": "비밀번호가 일치하지 않습니다."}
+                )
+            data.pop("password_confirm")  # 모델에 없는 필드 제거
 
-        validate_strong_password(data["password"], User(**data))
+        if password:
+            validate_strong_password(password)
 
-        data["phone_number"] = validate_phone_number(data["phone_number"])
+        if phone_number:
+            data["phone_number"] = validate_phone_number(phone_number)
 
         return super().validate(data)
 
     def create(self, validated_data):
         # create_user() -> 비밀번호 해싱
-        user = User.objects.create_user(
-            email=validated_data["email"],
-            password=validated_data["password"],
-            name=validated_data["name"],
-            nickname=validated_data["nickname"],
-            phone_number=validated_data["phone_number"],
-            date_of_birth=validated_data["date_of_birth"],
-            # area=validated_data["area"],
-            # interest=validated_data["interest"],
-            # digital_level=validated_data["digital_level"],
-        )
-        return user
+        return User.objects.create_user(**validated_data)
 
 
 class LogoutSerializer(serializers.Serializer):
@@ -101,10 +112,10 @@ class LogoutSerializer(serializers.Serializer):
 
 class UserListSerializer(serializers.ModelSerializer):
     # age_group = serializers.CharField(source="age_group.name", read_only=True)
-    # area = serializers.CharField(source="area.name", read_only=True)
-    # interest = serializers.CharField(source="interest.name", read_only=True)
-    # digital_level = serializers.CharField(source="digital_level.name", read_only=True)
-    # digital_level = serializers.CharField(source="digital_level.name", read_only=True)
+    area = serializers.CharField(source="area.name", read_only=True)
+    interest = serializers.CharField(source="interest.name", read_only=True)
+    digital_level = serializers.CharField(source="digital_level.name", read_only=True)
+    file = FileSerializer(read_only=True)
 
     class Meta:
         model = User
@@ -116,20 +127,20 @@ class UserListSerializer(serializers.ModelSerializer):
             "phone_number",
             "date_of_birth",
             # "age_group",
-            # "area",
-            # "interest",
-            # "digital_level",
-            # "image_url",
+            "area",
+            "interest",
+            "digital_level",
+            "file",
             "created_at",
             "updated_at",
         ]
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    # area = AreaSerializer()
-    # interest = InterestSerializer()
-    # digital_level = DigitalLevelSerializer()
-    # image_url = serializers.SerializerMethodField()
+    area = AreaSerializer()
+    interest = InterestSerializer()
+    digital_level = DigitalLevelSerializer()
+    file = FileSerializer()
 
     class Meta:
         model = User
@@ -141,31 +152,24 @@ class ProfileSerializer(serializers.ModelSerializer):
             "phone_number",
             "date_of_birth",
             # "age_group",
-            # "area",
-            # "interest",
-            # "digital_level",
-            # "image_url",
-            "created_at",
-            "updated_at",
+            "area",
+            "interest",
+            "digital_level",
+            "file",
         ]
 
     # serializer.data 출력 값 변환
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        if data.get("phone_number"):
-            data["phone_number"] = format_phone(data["phone_number"])
+        if phone_number := data.get("phone_number"):
+            data["phone_number"] = format_phone(phone_number)
         return data
-
-    # def get_image_url(self, obj):
-    #     profile_image = obj.profile_images.first()
-    #     if profile_image and profile_image.file:
-    #         # image는 ImageField이기 때문에 .url 속성을 호출하면 저장된 파일의 경로가 자동으로 완전한 URL을 반환
-    #         return profile_image.file.url
-    #     return None
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
-    # password_confirm = serializers.CharField(write_only=True)
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
     # area = AreaSerializer()
     # interest = InterestSerializer()
     # digital_level = DigitalLevelSerializer()
@@ -176,25 +180,41 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "email",
-            "password",
-            # "password_confirm",
+            "current_password",
+            "new_password",
+            "new_password_confirm",
             "name",
             "nickname",
             "phone_number",
             "date_of_birth",
             # "age_group",
-            # "area",
-            # "interest",
-            # "digital_level",
-            # "image_url",
-            "created_at",
-            "updated_at",
+            "area",
+            "interest",
+            "digital_level",
+            "file",
         ]
         read_only_fields = ["id"]
         extra_kwargs = {
             # write_only : 쓰기만 되고 읽어 오진 않음.
-            "password": {"write_only": True}
+            "current_password": {"write_only": True},
+            "new_password": {"write_only": True},
+            "new_password_confirm": {"write_only": True},
         }
+
+        if not settings.DEBUG:
+            extra_kwargs.update(
+                {
+                    "email": {"write_only": True},
+                    "name": {"write_only": True},
+                    "nickname": {"write_only": True},
+                    "phone_number": {"write_only": True},
+                    "date_of_birth": {"write_only": True},
+                    "area": {"write_only": True},
+                    "interest": {"write_only": True},
+                    "digital_level": {"write_only": True},
+                    "file": {"write_only": True},
+                }
+            )
 
     # serializer.data 출력 값 변환
     def to_representation(self, instance):
@@ -204,15 +224,34 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         return data
 
     def validate(self, data):
-        # # 비밀번호 일치 여부 확인
-        # if data["password"] != data["password_confirm"]:
-        #     raise ValidationError({"detail": "비밀번호가 일치하지 않습니다."})
-        # data.pop("password_confirm")  # 모델에 없는 필드 제거
+        current_password = data.get("current_password")
+        new_password = data.get("new_password")
+        new_password_confirm = data.get("new_password_confirm")
+        phone_number = data.get("phone_number")
+        user = self.context["request"].user
 
-        validate_strong_password(data["password"], User(**data))
+        if current_password:
+            if not user.check_password(current_password):
+                raise serializers.ValidationError(
+                    {"detail": "현재 비밀번호가 일치하지 않습니다."}
+                )
+            data.pop("current_password")  # 모델에 없는 필드 제거
 
-        if "phone_number" in data and data["phone_number"]:
-            data["phone_number"] = validate_phone_number(data["phone_number"])
+        # 비밀번호 일치 여부 확인
+        if new_password and new_password_confirm:
+            if new_password != new_password_confirm:
+                raise serializers.ValidationError(
+                    {"detail": "새로운 비밀번호가 일치하지 않습니다."}
+                )
+            data.pop("new_password_confirm")  # 모델에 없는 필드 제거
+
+        if new_password:
+            validate_strong_password(new_password, user)
+            data["password"] = new_password
+            data.pop("new_password")  # 모델에 없는 필드 제거
+
+        if phone_number:
+            data["phone_number"] = validate_phone_number(phone_number)
 
         return super().validate(data)
 

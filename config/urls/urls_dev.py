@@ -24,11 +24,12 @@ from config.schema import schema_view  # 스웨거 설정 파일
 
 urlpatterns = [
     path("api/", include("apps.user.urls")),
-    # path("api/", include("apps.upload.urls")),
+    path("api/", include("apps.upload.urls")),
     path("api/", include("apps.reviews.urls")),
     path("api/options/", include("apps.options.urls")),
     path("api/leaders/", include("apps.leaders.urls")),
     path("api/meets/", include("apps.meet.urls")),
+    path("api/posts/", include("apps.posts.urls")),
 ]
 
 if settings.DEBUG:
