@@ -1,0 +1,25 @@
+name: "🧪 Test"
+description: "테스트 코드 추가 또는 개선"
+labels: ["test"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 테스트 목적
+      description: 어떤 부분을 테스트할지, 이유는 무엇인지 작성해주세요.
+      placeholder: 예) 회원가입 API의 유효성 검증 테스트 추가
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✅ 작업 항목
+      description: 테스트 작업을 체크리스트로 작성해주세요.
+      placeholder: |
+        - [ ] 회원가입 성공 시 응답 코드 확인
+        - [ ] 필수값 누락 시 400 에러 발생 확인
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🧰 사용한 테스트 도구
+      description: 사용한 도구나 테스트 프레임워크를 적어주세요.
+      placeholder: 예) pytest, jest, playwright 등
