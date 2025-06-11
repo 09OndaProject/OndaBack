@@ -96,4 +96,3 @@ jobs:
             git pull origin main
             poetry install --no-root
             sudo systemctl restart gunicorn
-            sudo systemctl reload nginx
