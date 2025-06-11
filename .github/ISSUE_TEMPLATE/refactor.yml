@@ -23,7 +23,7 @@ body:
       placeholder: |
         - [ ] 불필요한 코드 제거
         - [ ] 함수 분리 및 재사용화
-      validations:
+    validations:
       required: true
   - type: textarea
     attributes:

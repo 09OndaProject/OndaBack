@@ -1,0 +1,24 @@
+name: "📚 Documentation"
+description: "문서 수정 또는 추가"
+labels: ["documentation"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 문서 설명
+      description: 어떤 문서를 수정/추가할지 작성해주세요.
+      placeholder: 예) README에 프로젝트 실행 방법 추가
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✅ 작업 항목
+      description: 수정할 내용이나 추가할 내용을 체크리스트로 작성해주세요.
+      placeholder: |
+        - [ ] README에 설치 방법 작성
+        - [ ] API 명세서에 응답 예시 추가
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 자료
+      description: 문서 관련 참고 자료가 있다면 작성해주세요.
