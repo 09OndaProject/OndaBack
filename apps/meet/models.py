@@ -2,11 +2,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
-from options.models import *
+from apps.options.models import *
+from utils.models import TimestampModel
+#from apps.file.models import *
 User = get_user_model()
 
 
-class Meet(models.Model):
+class Meet(TimestampModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -21,7 +23,7 @@ class Meet(models.Model):
     contact = models.CharField(max_length=255, null=True, blank=True)
     max_people = models.IntegerField(null=True, blank=True)
     current_people = models.IntegerField(default=0)
-    # file = GenericRelation("Image")
+    #file = models.OneToOneField(File,on_delete=models.CASCADE)
     application_deadline = models.DateTimeField()
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,7 +39,7 @@ class MeetApply(models.Model):
     meet = models.ForeignKey(
         "Meet", on_delete=models.CASCADE, related_name="applications"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField("생성일자", auto_now_add=True)
 
     class Meta:
         unique_together = ("user", "meet")
@@ -50,7 +52,7 @@ class MeetApply(models.Model):
 class MeetBookmark(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meet_applies')
     meet = models.ForeignKey('Meet', on_delete=models.CASCADE, related_name='applications')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField("생성일자", auto_now_add=True)
 
     class Meta:
         unique_together = ('user', 'meet')
