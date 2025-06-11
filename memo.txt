@@ -1201,7 +1201,7 @@ sudo vi /etc/nginx/nginx.conf
 # 상단의 'user www-data'를 'user ubuntu'로 변경 후 :wq
 
 # syetemctl 을 사용하여 nginx 서비스 시작
-sudo systemctl restart nginx.service
+sudo systemctl reload nginx.service
 
 # syetemctl 을 사용하여 nginx 서비스 상태확인
 sudo systemctl status nginx.service
@@ -1649,3 +1649,6 @@ s3 버킷 정책 설정
         }
     ]
 }
+
+이렇게 실행시 서버 실행 오류 확인 가능
+gunicorn config.wsgi:application
