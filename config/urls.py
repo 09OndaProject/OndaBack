@@ -21,9 +21,8 @@ from django.contrib import admin
 from django.urls import include, path
 
 from config.schema import schema_view  # 스웨거 설정 파일
-from config.settings import ENV
 
-env = ENV.get("DJANGO_ENV", "local")
+env = settings.ENV.get("DJANGO_ENV", "local")
 
 urlpatterns = [
     path("api/", include("apps.user.urls")),
