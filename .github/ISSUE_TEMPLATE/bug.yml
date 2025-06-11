@@ -1,0 +1,33 @@
+name: "🐞 Bug"
+description: "버그 수정"
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 버그 설명
+      description: 어떤 문제가 발생했는지 구체적으로 작성해주세요.
+      placeholder: 예) 로그인 버튼 클릭 시 아무 반응이 없음
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🧪 재현 방법
+      description: 버그를 어떻게 재현할 수 있는지 순서대로 작성해주세요.
+      placeholder: 예) 1. 로그인 페이지 접속 → 2. 아이디/비밀번호 입력 → 3. 로그인 버튼 클릭
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✅ 기대 동작
+      description: 정상 동작 시 어떤 결과가 나와야 하는지 작성해주세요.
+      placeholder: 예) 로그인 후 대시보드 페이지로 이동
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 📸 스크린샷/에러 로그
+      description: 가능하다면 화면 캡처나 에러 로그도 함께 작성해주세요.
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 자료
+      description: 참고 자료가 있다면 작성해 주세요.

@@ -1,0 +1,30 @@
+name: "🚀 Deployment"
+description: "배포 작업"
+labels: ["deploy"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 배포 설명
+      description: 이번 배포에 포함된 내용을 간략히 요약해주세요.
+      placeholder: 예) v1.2.0 기능 배포 (회원가입/로그인/캘린더 생성 등)
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✅ 배포 전 체크리스트
+      description: 배포 전 확인할 사항들을 체크박스 형태로 작성해주세요.
+      placeholder: |
+        - [ ] 모든 테스트 통과
+        - [ ] 마이그레이션 적용 여부 확인
+        - [ ] 환경변수 설정 확인
+      validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🛠 배포 방법
+      description: 배포 커맨드 또는 작업 순서를 작성해주세요.
+      placeholder: 예) docker-compose pull → docker-compose up -d --build
+  - type: textarea
+    attributes:
+      label: 📝 배포 후 확인 항목
+      description: 배포 완료 후 확인해야 할 사항이 있다면 작성해주세요.
