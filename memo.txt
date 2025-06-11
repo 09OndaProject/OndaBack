@@ -1325,7 +1325,6 @@ python3 manage.py migrate
 python3 manage.py createsuperuser
 
 
-
 컨테이너 정지 및 제거
 sudo docker-compose -f docker-compose-prod.yml down
 
@@ -1388,23 +1387,6 @@ sudo systemctl reload nginx
 scp -i ~/Downloads/your-key.pem -r .static_root/ ec2-user@3.39.10.22:/home/ec2-user/WiStarBack/
 scp -i ~/Downloads/wistar.pem -r .static_root/ ec2-user@3.39.10.22:/home/ec2-user/WiStarBack/
 
-server {
-    listen 80;
-    server_name _;
-
-    location /static/ {
-        alias /home/ec2-user/WiStarBack/.static_root/;
-        access_log off;
-        expires max;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-
 에러 로그 확인
 sudo tail -n 100 /var/log/nginx/error.log
 
@@ -1419,17 +1401,12 @@ sudo systemctl reload nginx
 
 nginx 권한 설정
 sudo chmod +x /home
-sudo chmod +x /home/ec2-user
-sudo chmod +x /home/ec2-user/WiStarBack
-sudo chmod +x /home/ec2-user/WiStarBack/.static_root
-
 sudo chmod +x /home/ubuntu
 sudo chmod +x /home/ubuntu/OndaBack
 sudo chmod +x /home/ubuntu/OndaBack/.static_root
 
 http://3.39.10.22/redoc/
 http://3.39.10.22/swagger/
-
 
 커밋 로그 안남기고 최신 커밋에 합치는법
 git add .
@@ -1544,8 +1521,6 @@ git commit -m "PR #36 수동 병합 (마이그레이션 제외)"
 원격 브랜치에 적용
 git push
 
-
-
 도커 컨테이너 접속
 docker exec -it wistarback bash
 
@@ -1614,26 +1589,6 @@ rds에 접속
 psql -h <RDS_ENDPOINT> -u <username> -p
 
 
-nginx 설정
-server {
-        server_name ec2-13-209-4-19.ap-northeast-2.compute.amazonaws.com;
-
-        location /static/ {
-                alias /WiStarBack/.static_root/;
-        }
-
-        location /media/ {
-                root /home/ubuntu/OndaBack;
-        }
-
-        location / {
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
-        }
-        listen 80;
-}
-
 s3 버킷 정책 설정
 {
     "Version": "2012-10-17",
@@ -1652,3 +1607,42 @@ s3 버킷 정책 설정
 
 이렇게 실행시 서버 실행 오류 확인 가능
 gunicorn config.wsgi:application
+
+# 개발 환경에서 사용하는 경로
+STATIC_URL = "static/"
+# 장고가 자동으로 정적파일을 서빙해주는 경로 (gunicorn실행시 적용안됨)
+STATIC_DIR = BASE_DIR / "static"
+STATICFILES_DIRS = [
+    STATIC_DIR,
+]
+
+# collectstatic하면 해당 경로로 정적 파일이 복사됨
+STATIC_ROOT = BASE_DIR / ".static_root"
+
+gunicorn을 사용한 배포시 django가 자동으로 정적 파일을 서빙하지 않기 때문에
+collectstatic해서 정적 파일을 복사한 후 nginx를 통해서 서빙
+
+nginx 설정 시
+include proxy_params;
+이렇게 설정하면 아래 내용 포함
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+/etc/nginx/ 경로에 위 내용을 포함한 proxy_params 파일이 존재
+/etc/nginx/proxy_params
+
+각 헤더의 역할
+Host : 클라이언트가 요청한 원래 호스트 이름 유지
+X-Real-IP : 클라이언트의 실제 IP 주소 전달
+X-Forwarded-For : 프록시를 거쳐온 클라이언트 IP 리스트 전달
+X-Forwarded-Proto : 요청의 원래 프로토콜(http 또는 https) 전달
+
+proxy_pass 설정
+1. proxy_pass http://127.0.0.1:8000;
+ - TCP 통신: Nginx가 Gunicorn에 **IP 주소 + 포트번호(8000)**로 요청을 보냅니다.
+ - 일반적이고 직관적이며 디버깅이 쉬움
+2. proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+Unix 도메인 소켓 통신: 로컬 파일 시스템 경로(/srv/gunicorn/gunicorn.sock)를 통해 Gunicorn과 통신합니다.
+ - 성능 우수 (TCP보다 CPU 오버헤드가 낮음)
+ - 보안 우수 (외부에서 직접 접근 불가)

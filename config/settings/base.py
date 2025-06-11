@@ -151,13 +151,13 @@ USE_TZ = True
 
 # 개발 환경에서 사용하는 경로
 STATIC_URL = "static/"
+# 장고가 자동으로 정적파일을 서빙해주는 경로 (gunicorn실행시 적용안됨)
 STATIC_DIR = BASE_DIR / "static"
-
 STATICFILES_DIRS = [
     STATIC_DIR,
 ]
 
-# 배포할 때 사용하는 경로 (collectstatic하면 해당 경로로 복사됨)
+# collectstatic하면 해당 경로로 정적 파일이 복사됨
 STATIC_ROOT = BASE_DIR / ".static_root"
 
 # Media
