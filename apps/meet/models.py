@@ -2,9 +2,11 @@
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+
 from apps.options.models import *
 from utils.models import TimestampModel
-#from apps.file.models import *
+
+# from apps.file.models import *
 User = get_user_model()
 
 
@@ -23,7 +25,7 @@ class Meet(TimestampModel):
     contact = models.CharField(max_length=255, null=True, blank=True)
     max_people = models.IntegerField(null=True, blank=True)
     current_people = models.IntegerField(default=0)
-    #file = models.OneToOneField(File,on_delete=models.CASCADE)
+    # file = models.OneToOneField(File,on_delete=models.CASCADE)
     application_deadline = models.DateTimeField()
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
