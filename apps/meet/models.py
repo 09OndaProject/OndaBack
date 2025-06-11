@@ -9,6 +9,11 @@ from utils.models import TimestampModel
 # from apps.file.models import *
 User = get_user_model()
 
+STATUS_CHOICES = (
+    ("모집중", "모집중"),
+    ("마감", "마감"),
+)
+
 
 class Meet(TimestampModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -25,6 +30,7 @@ class Meet(TimestampModel):
     contact = models.CharField(max_length=255, null=True, blank=True)
     max_people = models.IntegerField(null=True, blank=True)
     current_people = models.IntegerField(default=0)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="모집중")
     # file = models.OneToOneField(File,on_delete=models.CASCADE)
     application_deadline = models.DateTimeField()
     updated_at = models.DateTimeField(auto_now=True)

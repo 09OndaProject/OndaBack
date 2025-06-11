@@ -1,6 +1,6 @@
 import random
 
-from config.settings.base import ENV, STATIC_URL
+from config.settings.base import ENV
 
 DEBUG = True
 ALLOWED_HOSTS = []
@@ -17,20 +17,18 @@ SECRET_KEY = ENV.get(
     "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()?", k=50)),
 )
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "HOST": ENV.get("POSTGRES_HOST", ""),
-#         "USER": ENV.get("POSTGRES_USER", ""),
-#         "PASSWORD": ENV.get("POSTGRES_PASSWORD", ""),
-#         "NAME": ENV.get("POSTGRES_DB", ""),
-#         "PORT": ENV.get("POSTGRES_PORT", 5432),
-#     }
-# }
 
-# 파일 저장 기본 설정을 Cloudinary로 설정 (선택 사항)
-# Django의 ImageField, FileField에서 저장하는 모든 업로드 파일은 MEDIA_ROOT가 아닌 Cloudinary에 저장됩니다.
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "HOST": ENV.get("POSTGRES_HOST", "db"),
+        "USER": ENV.get("POSTGRES_USER", "postgres"),
+        "PASSWORD": ENV.get("POSTGRES_PASSWORD", "postgres"),
+        "NAME": ENV.get("POSTGRES_DB", "oz_collabo"),
+        "PORT": ENV.get("POSTGRES_PORT", 5432),
+    }
+}
+
 
 # # 기본 이미지 url 설정
 # BASE_STATIC_URL = STATIC_URL + "images/"
