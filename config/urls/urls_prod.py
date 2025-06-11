@@ -28,6 +28,7 @@ urlpatterns = [
     path("api/options/", include("apps.options.urls")),
     path("api/leaders/", include("apps.leaders.urls")),
     path("api/meets/", include("apps.meet.urls")),
+    path("api/posts/", include("apps.posts.urls")),
 ]
 
 if settings.DEBUG:
