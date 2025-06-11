@@ -1035,13 +1035,9 @@ ln -sf config/settings/prod.py config/settings/settings.py
 
 envs 폴더를 생성하고 하위에 .env.prod 파일을 생성합니다.
 mkdir envs
-cd envs
 
-# touch 명령어로 빈 파일 생성
-touch .env.prod
-
-# .env.prod를  vi 에디터로 편집합니다.
-vi .env.prod
+# .env를  vi 에디터로 편집 및 생성.
+vi envs/.env
 
 # pyenv 가상환경 생성
 pyenv virtualenv <python-version> 가상환경이름
@@ -1049,7 +1045,7 @@ pyenv virtualenv 3.13.1 onda
 
 # 가상환경 적용
 pyenv local 가상환경이름
-pyenv local wistar
+pyenv local onda
 pyenv local 3.13.1  #가상환경 생성 없이 버전 파이썬 버전 설정
 
 # 가상환경 적용 확인
@@ -1079,13 +1075,6 @@ poetry env activate
 ### Gunicorn 설정하기
 아래의 가이드를 따라 Gunicorn 설정을 추가합니다.
 
-# Gunicorn 가상환경 설정
-pyenv virtualenv <python version> gunicorn
-pyenv virtualenv 3.13.1 gunicorn
-
-# 현재 쉘에 gunicorn 가상환경 지정
-pyenv shell gunicorn
-
 # 가상환경에 gunicorn 설치
 pip install gunicorn
 
@@ -1097,6 +1086,7 @@ poetry install --no-root
 sudo vi /etc/systemd/system/gunicorn.service
 
 # 아래의 내용을 추가후 :wq
+# pyenv로 가상환경 사용시 설정
 [Unit]
 Description=gunicorn daemon
 After=network.target
@@ -1105,19 +1095,19 @@ After=network.target
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/프로젝트 루트 디렉터리
-ExecStart=/home/ubuntu/.pyenv/versions/gunicorn/bin/gunicorn \
+ExecStart=/home/ubuntu/.pyenv/versions/가상환경이름/bin/gunicorn \
         --access-logfile /var/log/gunicorn/access.log \
         --error-logfile /var/log/gunicorn/error.log \
         --log-level info \
         --workers 3 \
         --bind unix:/srv/gunicorn/gunicorn.sock config.wsgi:application
-Environment="DJANGO_SETTINGS_MODULE=config.settings.settings"
+Environment="DJANGO_SETTINGS_MODULE=config.settings"
 [Install]
 WantedBy=multi-user.target
 
 여기서 가상환경을
-pyenv virtualenv 3.13.1 wistar 이렇게 만들어서 사용했으면
-/home/ubuntu/.pyenv/versions/wistar/bin/gunicorn
+pyenv virtualenv 3.13.1 onda 이렇게 만들어서 사용했으면
+/home/ubuntu/.pyenv/versions/onda/bin/gunicorn
 이렇게 이 부분만 바꾸면 된다.
 
 # 시스템설정 daemon-reload
@@ -1226,7 +1216,9 @@ certbot 설치
 sudo apt-get install certbot python3-certbot-nginx
 
 nginx에 ssl 인증서를 적용
-sudo certbot --nginx -d example.com
+sudo certbot --nginx -d 도메인
+
+이메일 입력
 
 첫번째 질문은 서비스 사용 약관에 대한 pdf 파일 생성여부를 물어보는 것이고,
 두번째 질문은 도메인 인증에 성공하면 해당 이슈를 이메일로 공유하고
@@ -1240,6 +1232,38 @@ Let's Encrypt 인증서는 90일 동안만 유효합니다.
 certbot은 자동 갱신을 위한 설정이 기본적으로 되어 있지만,
 아래 커맨드로 갱신이 잘 작동하는지 확인
 sudo certbot renew --dry-run
+
+이후 nginx 설정
+sudo vi /etc/nginx/sites-available/django.conf
+
+server {
+    listen 80;
+    server_name onda.n-e.kr;
+
+     location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+server {
+        listen 443 ssl;
+        server_name onda.n-e.kr;
+
+        ssl_certificate /etc/letsencrypt/live/onda.n-e.kr/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/onda.n-e.kr/privkey.pem;
+
+        location / {
+                include proxy_params;
+                proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+        }
+
+        location /.well-known/acme-challenge/ {
+                root /var/www/certbot;
+        }
+}
 
 ------------------------------------------
 아마존 리눅스 서버에서 도커 사용해 배포 설정하기
@@ -1647,3 +1671,4 @@ proxy_pass 설정
 Unix 도메인 소켓 통신: 로컬 파일 시스템 경로(/srv/gunicorn/gunicorn.sock)를 통해 Gunicorn과 통신합니다.
  - 성능 우수 (TCP보다 CPU 오버헤드가 낮음)
  - 보안 우수 (외부에서 직접 접근 불가)
+
