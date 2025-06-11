@@ -1169,6 +1169,7 @@ cd /etc/nginx/sites-available
 sudo rm default
 # 새로운 설정파일 추가
 sudo vi django.conf
+sudo vi /etc/nginx/sites-available/django.conf
 
 # 아래의 내용을 입력 후 :wq
 server {
@@ -1612,3 +1613,39 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 rds에 접속
 psql -h <RDS_ENDPOINT> -u <username> -p
 
+
+nginx 설정
+server {
+        server_name ec2-13-209-4-19.ap-northeast-2.compute.amazonaws.com;
+
+        location /static/ {
+                alias /WiStarBack/.static_root/;
+        }
+
+        location /media/ {
+                root /home/ubuntu/OndaBack;
+        }
+
+        location / {
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+        }
+        listen 80;
+}
+
+s3 버킷 정책 설정
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "*"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::본인 버킷 이름/*"
+        }
+    ]
+}

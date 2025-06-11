@@ -1,6 +1,6 @@
 import random
 
-from config.settings.base import ENV, STATIC_URL
+from config.settings.base import ENV
 
 DEBUG = True
 # DEBUG = False
@@ -29,39 +29,39 @@ DATABASES = {
 }
 
 # S3 사용시 설정
-# STORAGES = {
-#     "default": {
-#         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-#         "OPTIONS": {
-#             "access_key": ENV.get("S3_ACCESS_KEY", ""),
-#             "secret_key": ENV.get("S3_SECRET_ACCESS_KEY", ""),
-#             "bucket_name": ENV.get("S3_STORAGE_BUCKET_NAME", ""),
-#             "region_name": ENV.get("S3_REGION_NAME", ""),
-#             "custom_domain": f'{ENV.get("S3_STORAGE_BUCKET_NAME", "")}.s3.amazonaws.com',
-#             "location": "media",
-#             "default_acl": "public-read",
-#         },
-#     },
-#     "staticfiles": {
-#         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-#         "OPTIONS": {
-#             "access_key": ENV.get("S3_ACCESS_KEY", ""),
-#             "secret_key": ENV.get("S3_SECRET_ACCESS_KEY", ""),
-#             "bucket_name": ENV.get("S3_STORAGE_BUCKET_NAME", ""),
-#             "region_name": ENV.get("S3_REGION_NAME", ""),
-#             "custom_domain": f'{ENV.get("S3_STORAGE_BUCKET_NAME", "")}.s3.amazonaws.com',
-#             "location": "static",
-#             "default_acl": "public-read",
-#         },
-#     },
-# }
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "access_key": ENV.get("S3_ACCESS_KEY", ""),
+            "secret_key": ENV.get("S3_SECRET_ACCESS_KEY", ""),
+            "bucket_name": ENV.get("S3_STORAGE_BUCKET_NAME", ""),
+            "region_name": ENV.get("S3_REGION_NAME", ""),
+            "custom_domain": f'{ENV.get("S3_STORAGE_BUCKET_NAME", "")}.s3.amazonaws.com',
+            "location": "media",
+            "default_acl": "public-read",
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "access_key": ENV.get("S3_ACCESS_KEY", ""),
+            "secret_key": ENV.get("S3_SECRET_ACCESS_KEY", ""),
+            "bucket_name": ENV.get("S3_STORAGE_BUCKET_NAME", ""),
+            "region_name": ENV.get("S3_REGION_NAME", ""),
+            "custom_domain": f'{ENV.get("S3_STORAGE_BUCKET_NAME", "")}.s3.amazonaws.com',
+            "location": "static",
+            "default_acl": "public-read",
+        },
+    },
+}
 
 # # custom_domain이 설정되어 있으면, 이 도메인을 사용해서 URL을 생성
 # # 그렇지 않으면 기본 Amazon S3 URL (s3.{region}.amazonaws.com/{bucket}/...)을 사용
 
 # Static, Media URL 수정
-# MEDIA_URL = f"https://{ENV.get('S3_STORAGE_BUCKET_NAME')}.s3.amazonaws.com/media/"
-# STATIC_URL = f"https://{ENV.get('S3_STORAGE_BUCKET_NAME')}.s3.amazonaws.com/static/"
+MEDIA_URL = f"https://{ENV.get('S3_STORAGE_BUCKET_NAME')}.s3.amazonaws.com/media/"
+STATIC_URL = f"https://{ENV.get('S3_STORAGE_BUCKET_NAME')}.s3.amazonaws.com/static/"
 
 
 # # 기본 이미지 url 설정

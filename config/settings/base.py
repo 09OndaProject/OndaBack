@@ -63,6 +63,7 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt",  # poetry add djangorestframework-simplejwt
     "rest_framework_simplejwt.token_blacklist",
     "drf_yasg",
+    "storages",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + OWN_APPS + THIRD_PARTY_APPS
