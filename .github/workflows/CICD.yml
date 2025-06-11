@@ -92,7 +92,7 @@ jobs:
           key: ${{ secrets.SSH_PASSWORD }}
           command_timeout: 5m
           script: |
-            cd /home/ubuntu/WiStarBack
+            cd /home/ubuntu/OndaBack
             git pull origin main
             poetry install --no-root
             sudo systemctl restart gunicorn
