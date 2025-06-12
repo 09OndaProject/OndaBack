@@ -1,18 +1,19 @@
 from rest_framework import serializers
-from apps.upload.models import File
 
 from apps.leaders.models import (
     LeaderApplication,
-    PreviousActivity,
     LeaderCertificate,
+    PreviousActivity,
 )
+from apps.upload.models import File
 
 
 # 활동 이력 Serializer
 class PreviousActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = PreviousActivity
-        fields = ["title", "description"] #활동 제목 , 설명
+        fields = ["title", "description"]  # 활동 제목 , 설명
+
 
 # 자격증 업로드 Serializer
 class LeaderCertificateSerializer(serializers.ModelSerializer):
@@ -21,12 +22,13 @@ class LeaderCertificateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeaderCertificate
-        fields = ["certificate_type", "file"] # 증명서 유형 + 파일
+        fields = ["certificate_type", "file"]  # 증명서 유형 + 파일
+
 
 # 리더 신청 생성 (일반 사용자)
 class LeaderApplicationCreateSerializer(serializers.ModelSerializer):
-    previous_activities = PreviousActivitySerializer(many=True) # 활동 이력 리스트
-    certificates = LeaderCertificateSerializer(many=True) # 자격증 파일 리스트
+    previous_activities = PreviousActivitySerializer(many=True)  # 활동 이력 리스트
+    certificates = LeaderCertificateSerializer(many=True)  # 자격증 파일 리스트
 
     class Meta:
         model = LeaderApplication
@@ -57,15 +59,11 @@ class LeaderApplicationCreateSerializer(serializers.ModelSerializer):
 
         # 자격증 파일 저장
         for cert in certificates_data:
-            LeaderCertificate.objects.create(
-                leader_application=application, **cert
-            )
+            LeaderCertificate.objects.create(leader_application=application, **cert)
 
         # 활동 이력 저장
         for activity in activities_data:
-            PreviousActivity.objects.create(
-                leader_application=application, **activity
-            )
+            PreviousActivity.objects.create(leader_application=application, **activity)
 
         return application
 
