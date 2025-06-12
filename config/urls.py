@@ -22,6 +22,8 @@ from django.urls import include, path
 
 from config.schema import schema_view  # 스웨거 설정 파일
 
+env = settings.ENV.get("DJANGO_ENV", "local")
+
 urlpatterns = [
     path("api/", include("apps.user.urls")),
     path("api/", include("apps.upload.urls")),
@@ -51,5 +53,5 @@ if settings.DEBUG:
     ]
 
 # 개발 서버에서 미디어 파일을 서빙하기 위해 설정
-if settings.DEBUG:
+if settings.DEBUG and env == "local":
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
