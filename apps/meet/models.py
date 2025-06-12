@@ -2,10 +2,10 @@
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+from django.utils import timezone
 
 from apps.options.models import *
 from utils.models import TimestampModel
-from django.utils import timezone
 
 # from apps.file.models import *
 User = get_user_model()
@@ -22,14 +22,14 @@ class Meet(TimestampModel):
         if self.application_deadline and self.application_deadline < timezone.now():
             return "마감"
         return "모집중"
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True)
     digital_level = models.ForeignKey(
         DigitalLevel, on_delete=models.SET_NULL, null=True
     )
     interest = models.ForeignKey(Interest, on_delete=models.SET_NULL, null=True)
-    
+
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     date = models.DateField(null=True, blank=True)
