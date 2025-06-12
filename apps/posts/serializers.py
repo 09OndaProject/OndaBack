@@ -11,6 +11,7 @@ class PostImageSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     nickname = serializers.CharField(source="user.nickname", read_only=True)
+    is_mine = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Post
