@@ -10,6 +10,7 @@ CERTIFICATE_TYPE_CHOICES = [
     ("경력증명서", "경력증명서"),
 ]
 
+
 class LeaderApplicationStatus(models.TextChoices):
     PENDING = "pending", "대기중"
     APPROVED = "approved", "승인됨"
@@ -56,25 +57,22 @@ class LeaderApplication(models.Model):
     def __str__(self):
         return f"{self.user.nickname or self.user.email}의 리더 신청서"
 
+
 class LeaderCertificate(models.Model):
     leader_application = models.ForeignKey(
         LeaderApplication,
         on_delete=models.CASCADE,
         related_name="certificates",
-        verbose_name="리더 신청서"
+        verbose_name="리더 신청서",
     )
     certificate_type = models.CharField(
-        max_length=30,
-        choices=CERTIFICATE_TYPE_CHOICES,
-        verbose_name="증명서 유형"
+        max_length=30, choices=CERTIFICATE_TYPE_CHOICES, verbose_name="증명서 유형"
     )
-    file = models.FileField(
-        upload_to="certificates/",
-        verbose_name="파일"
-    )
+    file = models.FileField(upload_to="certificates/", verbose_name="파일")
 
     def __str__(self):
         return f"{self.certificate_type} - {self.file.name}"
+
 
 class PreviousActivity(models.Model):
     leader_application = models.ForeignKey(
