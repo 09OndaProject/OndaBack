@@ -100,5 +100,6 @@ jobs:
             cd /home/ubuntu/OndaBack
             git pull origin main
             pyenv shell onda
+            poetry env use $(pyenv which python)
             poetry install --no-root
             sudo systemctl restart gunicorn
