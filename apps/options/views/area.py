@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.options.models.area import Area
-from apps.options.serializers.area import AreaSerializer
+from apps.options.serializers.area import AreaSerializer, AreaSimpleSerializer
+
 
 
 @method_decorator(cache_page(60 * 60), name="dispatch")
@@ -29,8 +30,8 @@ class AreaListView(APIView):
                 type=openapi.TYPE_INTEGER,
             ),
         ],
-        responses={200: AreaSerializer(many=True)},
         tags=["옵션 API"],
+        responses={200: AreaSimpleSerializer(many=True)},
     )
     def get(self, request):
         depth = request.query_params.get("depth")
@@ -39,11 +40,17 @@ class AreaListView(APIView):
         queryset = Area.objects.all()
 
         if parent_id:
-            queryset = queryset.filter(parent_id=parent_id)
-        elif depth:
-            queryset = queryset.filter(depth=depth)
-        else:
-            queryset = queryset.filter(parent=None)
+            queryset = queryset.filter(parent_id=parent_id).order_by("id")
+            serializer = AreaSimpleSerializer(queryset, many=True)
 
-        serializer = AreaSerializer(queryset, many=True)
+        elif depth:
+            queryset = queryset.filter(depth=depth, parent=None).order_by("id")
+            serializer = AreaSerializer(queryset, many=True, context={"depth": 1})
+
+        else:
+            queryset = queryset.filter(parent=None).order_by("id")
+            serializer = AreaSerializer(queryset, many=True, context={"depth": 1})
+
         return Response(serializer.data)
+
+

@@ -104,8 +104,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": ENV.get("DB_NAME"),
+        "USER": ENV.get("DB_USER"),
+        "PASSWORD": ENV.get("DB_PASSWORD"),
+        "HOST": ENV.get("DB_HOST", "localhost"),
+        "PORT": ENV.get("DB_PORT", "5432"),
     }
 }
 
@@ -210,6 +214,7 @@ SWAGGER_EXCLUDED_APPS = [
 ]  # 제외할 앱 이름
 
 SWAGGER_SETTINGS = {
+    "DEFAULT_AUTO_SCHEMA_CLASS": "config.schema.CustomSwaggerAutoSchema", # 태그 관련 오류해결 을 위해 추가
     "SECURITY_DEFINITIONS": {
         "Bearer": {
             "type": "apiKey",
