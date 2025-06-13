@@ -16,6 +16,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import certifi
+from corsheaders.defaults import default_headers
 from dotenv import dotenv_values
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -90,6 +91,11 @@ CORS_ALLOWED_ORIGINS = [
 ]
 # 쿠키 포함 허용
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "Authorization",
+    "X-CSRFToken",
+    "X-Requested-With",
+]
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 
