@@ -224,12 +224,6 @@ SIMPLE_JWT = {
     # ...
 }
 
-# 소셜로그인에 사용할 url
-# FRONTEND_URL = "https://wistar.o-r.kr"
-# FRONTEND_URL = "http://localhost:5173"
-# 백엔드에서 임시로 테스트
-FRONTEND_URL = "http://127.0.0.1:8000/api"
-
 # 자동 슬래시 붙이는 기능 끄기
 APPEND_SLASH = False
 
