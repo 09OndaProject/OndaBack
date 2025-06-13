@@ -1,9 +1,9 @@
 from django.conf import settings
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
+from drf_yasg.inspectors import SwaggerAutoSchema
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-from drf_yasg.inspectors import SwaggerAutoSchema
 
 
 # 특정 앱의 뷰 스웨거 문서화 제외 설정
@@ -47,6 +47,7 @@ schema_view = get_schema_view(
 #
 # 설치
 # poetry add drf-yasg
+
 
 # 태그 관련 오류해결 을 위해 추가
 class CustomSwaggerAutoSchema(SwaggerAutoSchema):

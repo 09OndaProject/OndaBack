@@ -235,7 +235,7 @@ SWAGGER_EXCLUDED_APPS = [
 ]  # 제외할 앱 이름
 
 SWAGGER_SETTINGS = {
-    "DEFAULT_AUTO_SCHEMA_CLASS": "config.schema.CustomSwaggerAutoSchema", # 태그 관련 오류해결 을 위해 추가
+    "DEFAULT_AUTO_SCHEMA_CLASS": "config.schema.CustomSwaggerAutoSchema",  # 태그 관련 오류해결 을 위해 추가
     "SECURITY_DEFINITIONS": {
         "Bearer": {
             "type": "apiKey",

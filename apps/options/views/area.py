@@ -9,7 +9,6 @@ from apps.options.models.area import Area
 from apps.options.serializers.area import AreaSerializer, AreaSimpleSerializer
 
 
-
 @method_decorator(cache_page(60 * 60), name="dispatch")
 class AreaListView(APIView):
 
@@ -52,5 +51,3 @@ class AreaListView(APIView):
             serializer = AreaSerializer(queryset, many=True, context={"depth": 1})
 
         return Response(serializer.data)
-
-
