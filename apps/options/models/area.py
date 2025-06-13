@@ -6,7 +6,9 @@ class Area(models.Model):
     parent = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.CASCADE, related_name="children"
     )
-    depth = models.CharField(max_length=10, help_text="지역 유형: 시, 구, 동 등")
+    depth = models.CharField(
+        max_length=10, help_text="지역 유형: 시, 구, 동 등"
+    )
 
     class Meta:
         ordering = ["id"]

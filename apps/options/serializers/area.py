@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.options.models.area import Area
 
 
@@ -24,10 +23,8 @@ class AreaSerializer(serializers.ModelSerializer):
             return []
 
         children = obj.children.all().order_by("id")
-        return (
-            AreaSerializer(
-                children, many=True, context={"depth": current_depth + 1}
-            ).data
-            if children.exists()
-            else []
-        )
+        return AreaSerializer(
+            children,
+            many=True,
+            context={"depth": current_depth + 1}
+        ).data if children.exists() else []
