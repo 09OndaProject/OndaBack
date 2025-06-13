@@ -1,6 +1,7 @@
 from django.conf import settings
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
+from drf_yasg.inspectors import SwaggerAutoSchema
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
@@ -46,3 +47,12 @@ schema_view = get_schema_view(
 #
 # 설치
 # poetry add drf-yasg
+
+
+# 태그 관련 오류해결 을 위해 추가
+class CustomSwaggerAutoSchema(SwaggerAutoSchema):
+    def get_tags(self, operation_keys=None):
+        view_name = self.view.__class__.__name__.lower()
+        if "review" in view_name:
+            return ["리뷰 API"]
+        return super().get_tags(operation_keys)
