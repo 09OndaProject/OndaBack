@@ -91,12 +91,17 @@ CORS_ALLOWED_ORIGINS = [
 ]
 # 쿠키 포함 허용
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    "Authorization",
-    "X-CSRFToken",
-    "X-Requested-With",
-]
-CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+
+# 기본값 (설정안해도 됨)
+# CORS_ALLOW_HEADERS = [
+#     "accept",
+#     "authorization",
+#     "content-type",
+#     "user-agent",
+#     "x-csrftoken",
+#     "x-requested-with",
+# ]
+# CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 
 ROOT_URLCONF = "config.urls"
