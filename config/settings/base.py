@@ -79,6 +79,19 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# 프론트 도메인 등록
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://onda-develop-868p.vercel.app/",
+    "https://www.ondamoim.com",
+]
+
+# 쿠키 포함 허용
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+
+
 ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
