@@ -99,7 +99,6 @@ jobs:
             eval "$(pyenv virtualenv-init -)"
             cd /home/ubuntu/OndaBack
             git pull origin main
-            pyenv activate onda
-            poetry env use $(which python)
+            pyenv shell onda
             poetry install --no-root
             sudo systemctl restart gunicorn
