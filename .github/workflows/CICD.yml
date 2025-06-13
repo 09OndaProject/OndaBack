@@ -92,9 +92,12 @@ jobs:
           key: ${{ secrets.SSH_PASSWORD }}
           command_timeout: 5m
           script: |
-            export PATH="$HOME/.local/bin:$PATH"
+            export PATH="$HOME/.pyenv/bin:$PATH"
+            eval "$(pyenv init -)"
+            eval "$(pyenv virtualenv-init -)"
             cd /home/ubuntu/OndaBack
             git pull origin main
-            poetry env use /home/ubuntu/.pyenv/versions/3.13.1/envs/onda/bin/python
-            poetry install --no-root
+            pyenv shell onda
+            pip install --upgrade pip
+            pip install -r requirements.txt
             sudo systemctl restart gunicorn
