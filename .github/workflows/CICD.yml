@@ -94,7 +94,12 @@ jobs:
           script: |
             set -e
             export PATH="$HOME/.local/bin:$PATH"
+            export PATH="$HOME/.pyenv/bin:$PATH"
+            eval "$(pyenv init -)"
+            eval "$(pyenv virtualenv-init -)"
             cd /home/ubuntu/OndaBack
             git pull origin main
+            pyenv activate onda
+            poetry env use $(which python)
             poetry install --no-root
             sudo systemctl restart gunicorn
