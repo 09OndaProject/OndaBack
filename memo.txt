@@ -599,6 +599,13 @@ final_response.set_cookie(
 )
 return final_response
 
+------------------------------
+cors 설정
+------------------------------
+
+django-cors-headers 설치
+poetry add django-cors-headers
+
 settings.py 설정
 INSTALLED_APPS += ['corsheaders']
 
@@ -609,12 +616,32 @@ MIDDLEWARE = [
 
 # 프론트 도메인 등록
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
     "http://localhost:5173",
+    "https://onda-develop-868p.vercel.app/",
+    "https://www.ondamoim.com",
 ]
 
+# 모든 출처에서의 요청 허용
+# CORS_ALLOW_ALL_ORIGINS = True
+
 # 쿠키 포함 허용
+# 쿠키, 인증 헤더 등을 포함한 CORS 요청 허용
+# 기본값 False
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = ['GET','POST','PUT','PATCH','DELETE','OPTIONS']
+
+# 기본값 (설정안해도 됨)
+# default_headers에 포함
+# CORS_ALLOW_HEADERS = [
+#     "accept",
+#     "authorization",
+#     "content-type",
+#     "user-agent",
+#     "x-csrftoken",
+#     "x-requested-with",
+# ]
+# default_methods에 포함
+# CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 --------------------
 이메일 보내는 기능 문제

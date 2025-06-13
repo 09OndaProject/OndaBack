@@ -1,7 +1,7 @@
-import copy
 from urllib.parse import urlencode
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.signing import SignatureExpired, TimestampSigner
 from django.db.models import Q
@@ -31,7 +31,7 @@ from rest_framework_simplejwt.serializers import (
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.user.models import User, UserRole
+from apps.user.models import UserRole
 from apps.user.serializers import (
     LogoutSerializer,
     PasswordCheckSerializer,
@@ -40,9 +40,11 @@ from apps.user.serializers import (
     RegisterSerializer,
     UserListSerializer,
 )
-from utils.email import send_email
+from apps.user.utils.jwt_token import modify_access_token
 from utils.pagination import CustomPageNumberPagination
 from utils.permissions import AdminOnly
+
+User = get_user_model()
 
 
 # 회원 가입
@@ -432,7 +434,13 @@ class CustomTokenRefreshView(APIView):
         # SimpleJWT Serializer로 Access Token 재발급
         serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
         serializer.is_valid(raise_exception=True)
-        new_access_token = serializer.validated_data.get("access")
+        new_access_token = serializer.validated_data.get(
+            "access"
+        )  # access token 문자열 (JWT 형식)
+
+        new_access_token = modify_access_token(
+            new_access_token
+        )  # 토큰에 유저 정보 추가
 
         # 새로운 커스텀 CSRF 토큰 발급 (선택)
         new_csrf_token = get_token(request=request)
@@ -456,6 +464,7 @@ class CustomTokenRefreshView(APIView):
                 key="refresh_token",
                 value=new_refresh_token,
                 httponly=True,
+                # secure=True,  # HTTPS 환경에서만 전송
                 secure=False,  # 로컬 개발환경
                 samesite="Lax",
                 path="/api/users/token",

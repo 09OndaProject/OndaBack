@@ -1,13 +1,10 @@
 from enum import IntEnum
 
-from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
 from apps.options.models import Area, DigitalLevel, Interest
 from apps.upload.models import File
-from utils.mixins import FileCleanupMixin
 
 # from apps.upload.models import File
 from utils.models import TimestampModel
@@ -66,10 +63,18 @@ class UserRole(IntEnum):
     USER = 1  # 유저  name:USER  value:1
     LEADER = 2  # 리더  name:LEADER  value:2
 
+    @classmethod
+    def choices(cls):
+        return [(user_role.value, user_role.name.lower()) for user_role in cls]
+
 
 class Provider(IntEnum):
-    HOME = 0  #   name:HOME  value:0
+    HOME = 0  # 일반  name:HOME  value:0
     KAKAO = 1  # 카카오  name:KAKAO  value:1
+
+    @classmethod
+    def choices(cls):
+        return [(provider.value, provider.name.lower()) for provider in cls]
 
 
 class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아서 사용
@@ -108,10 +113,14 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         related_name="+",
     )
     provider = models.PositiveSmallIntegerField(
-        verbose_name="제공자", default=Provider.HOME.value
+        verbose_name="제공자",
+        default=Provider.HOME.value,
+        choices=Provider.choices(),
     )
     role = models.PositiveSmallIntegerField(
-        verbose_name="권한", default=UserRole.USER.value
+        verbose_name="권한",
+        default=UserRole.USER.value,
+        choices=UserRole.choices(),
     )
 
     last_login = models.DateTimeField(
@@ -135,11 +144,11 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         verbose_name = "유저"
         verbose_name_plural = f"{verbose_name} 목록"
 
-    def get_provider_display(self):
-        return Provider(self.provider).name.lower()
-
-    def get_role_display(self):
-        return UserRole(self.role).name.lower()
+    # choices 설정 시 자동 생성됨
+    # def get_provider_display(self):
+    #     return Provider(self.provider).name.lower()
+    # def get_role_display(self):
+    #     return UserRole(self.role).name.lower()
 
     def get_full_name(self):  # 사용자의 전체 이름(Full name)을 반환. 성과 이름을 합침
         # return f"{self.first_name} {self.last_name}"
