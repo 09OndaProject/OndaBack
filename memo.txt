@@ -78,7 +78,7 @@ poetry env activate
 poetry install
 
 배포용 패키지만 설치 (dev 제외)
-poetry install --no-dev
+poetry install --without dev --no-root
 안될시
 poetry install --no-root
 
@@ -1742,3 +1742,51 @@ AWS Route 53에서 사용하고, AWS 서비스(예: EC2, S3, CloudFront 등)에 
 💡 참고:
   - 도메인 등록업체에서 네임서버 변경이 적용되기까지 24~48시간 걸릴 수 있습니다.
   - Route 53에서 TTL을 적절히 설정하면 캐싱을 제어할 수 있습니다.
+
+poetry install --without dev --no-root
+# CD 배포 설정
+# poetry로 설치된 패키지 requirements.txt 만들기
+poetry export --without-hashes --with prod -f requirements.txt -o requirements.txt
+
+poetry.lock 기반으로 설치할 모든 패키지를 requirements.txt 형식으로 내보내는(export) 명령어입니다.
+--without-hashes: 각 패키지에 대한 hash 정보를 생략 (pip 설치시 유연성 확보).
+-f requirements.txt: 출력 포맷을 pip에서 사용하는 requirements.txt 형식으로 지정.
+-o requirements.txt: 현재 디렉토리에 requirements.txt 파일로 저장.
+
+script: |
+  export PATH="$HOME/.pyenv/bin:$PATH"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+  cd /home/ubuntu/OndaBack
+  git pull origin main
+  pyenv shell onda
+  pip install --upgrade pip
+  pip install -r requirements.txt
+  sudo systemctl restart gunicorn
+
+export PATH=...
+pyenv 실행 파일이 있는 경로를 PATH에 추가해 pyenv 명령을 사용할 수 있게 설정
+
+eval "$(pyenv init -)"
+pyenv의 쉘 초기화 스크립트를 실행합니다.
+이 명령어가 있어야 pyenv 명령어와 관련된 내부 함수들이 정상 동작합니다.
+
+eval "$(pyenv virtualenv-init -)"
+pyenv-virtualenv 플러그인을 초기화합니다.
+이후 pyenv shell <env>와 같은 명령을 사용할 수 있게 됩니다.
+
+
+pip-tools
+pip 환경에서 패키지 버전 고정 및 의존성 관리를 더 체계적으로 할 수 있게 도와주는 Python CLI 도구 모음
+
+poetry add pip-tools
+pip-sync requirements.txt
+
+pip-sync는 requirements.txt에 명시된 것만 남기고, 나머지는 삭제
+
+
+개발용 패키지를 포함해 requirements.txt 생성
+poetry export --without-hashes --with dev -f requirements.txt -o requirements.txt
+
+pip-sync requirements.txt
+하면 깔끔하게 정리
