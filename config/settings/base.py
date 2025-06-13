@@ -16,7 +16,6 @@ from datetime import timedelta
 from pathlib import Path
 
 import certifi
-from corsheaders.defaults import default_headers
 from dotenv import dotenv_values
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -86,13 +85,14 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://onda-develop-868p.vercel.app/",
+    "https://onda-develop-868p.vercel.app",
     "https://www.ondamoim.com",
 ]
 # 쿠키 포함 허용
 CORS_ALLOW_CREDENTIALS = True
 
 # 기본값 (설정안해도 됨)
+# default_headers에 포함
 # CORS_ALLOW_HEADERS = [
 #     "accept",
 #     "authorization",
@@ -101,6 +101,7 @@ CORS_ALLOW_CREDENTIALS = True
 #     "x-csrftoken",
 #     "x-requested-with",
 # ]
+# default_methods에 포함
 # CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 
@@ -156,7 +157,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",  # 숫자만으로 구성된 비밀번호 거부
     },
     {
-        "NAME": "utils.custom_password_validation.NoKoreanPasswordValidator",  # 한글 입력 거부 커스텀
+        "NAME": "apps.user.utils.custom_password_validation.NoKoreanPasswordValidator",  # 한글 입력 거부 커스텀
     },
 ]
 
@@ -215,7 +216,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     # It will work instead of the default serializer(TokenObtainPairSerializer).
-    "TOKEN_OBTAIN_SERIALIZER": "utils.jwt_serializers.OndaTokenObtainPairSerializer",
+    "TOKEN_OBTAIN_SERIALIZER": "apps.user.utils.jwt_serializers.OndaTokenObtainPairSerializer",
     # ...
 }
 

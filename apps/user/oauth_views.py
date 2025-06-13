@@ -16,11 +16,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.user.models import Provider
 from apps.user.oauth_mixins import (
     KaKaoProviderInfoMixin,
 )
-from utils.random_nickname import generate_unique_numbered_nickname
+from apps.user.utils.jwt_token import get_tokens_for_user
+from apps.user.utils.random_nickname import generate_unique_numbered_nickname
 
 User = get_user_model()
 
@@ -141,8 +141,8 @@ class OAuthCallbackView(APIView, ABC):
             user.save()
 
         # JWT 토큰 발급
-        refresh_token = RefreshToken.for_user(user)
-        access_token = str(refresh_token.access_token)
+        refresh_token, access_token = get_tokens_for_user(user)
+
         # 커스텀 CSRF 토큰 발급
         csrf_token = get_token(request=request)
 
@@ -157,7 +157,7 @@ class OAuthCallbackView(APIView, ABC):
         # 쿠키 추가
         response.set_cookie(
             key="refresh_token",
-            value=str(refresh_token),
+            value=refresh_token,
             httponly=True,
             secure=True,  # HTTPS 환경에서만 전송
             # secure=False,  # 로컬 개발 환경에 맞춰서 설정

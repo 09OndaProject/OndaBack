@@ -92,6 +92,8 @@ jobs:
           key: ${{ secrets.SSH_PASSWORD }}
           command_timeout: 5m
           script: |
+            set -e
+            export PATH="$HOME/.local/bin:$PATH"
             cd /home/ubuntu/OndaBack
             git pull origin main
             poetry install --no-root
