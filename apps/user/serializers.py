@@ -125,9 +125,12 @@ class LogoutSerializer(serializers.Serializer):
 class UserListSerializer(serializers.ModelSerializer):
     # age_group = serializers.CharField(source="age_group.name", read_only=True)
     area = serializers.CharField(source="area.name", read_only=True)
-    interest = serializers.CharField(source="interest.name", read_only=True)
+    interests = serializers.SlugRelatedField(
+        slug_field="interest_name", read_only=True, many=True
+    )
     digital_level = serializers.CharField(source="digital_level.name", read_only=True)
-    file = FileSerializer(read_only=True)
+    file = serializers.CharField(source="file.file.url", read_only=True)
+    thumbnail = serializers.CharField(source="file.thumbnail.url", read_only=True)
 
     class Meta:
         model = User
@@ -140,9 +143,10 @@ class UserListSerializer(serializers.ModelSerializer):
             "date_of_birth",
             # "age_group",
             "area",
-            "interest",
+            "interests",
             "digital_level",
             "file",
+            "thumbnail",
             "created_at",
             "updated_at",
         ]

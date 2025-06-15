@@ -477,7 +477,7 @@ class CustomTokenRefreshView(APIView):
 # 유저 목록/검색 (관리자)
 class UserListView(ListAPIView):
     # queryset = User.objects.all()
-    queryset = User.objects.select_related("area", "interest", "digital_level", "file")
+    queryset = User.objects.select_related("area", "digital_level", "file").prefetch_related("interests")
     serializer_class = UserListSerializer
     # permission_classes = [IsAuthenticated]
     permission_classes = [AdminOnly]
@@ -509,8 +509,8 @@ class UserListView(ListAPIView):
         if area := query.get("area"):
             q &= Q(area__id=area)  # 외래키 이름 검색 가정
 
-        if interest := query.get("interest"):
-            q &= Q(interest__id=interest)
+        # if interest := query.get("interest"):
+        #     q &= Q(interest__id=interest)
 
         if digital_level := query.get("digital_level"):
             q &= Q(digital_level__id=digital_level)
@@ -567,12 +567,6 @@ class UserListView(ListAPIView):
                 "area",
                 openapi.IN_QUERY,
                 description="지역 ID",
-                type=openapi.TYPE_INTEGER,
-            ),
-            openapi.Parameter(
-                "interest",
-                openapi.IN_QUERY,
-                description="관심사 ID",
                 type=openapi.TYPE_INTEGER,
             ),
             openapi.Parameter(
