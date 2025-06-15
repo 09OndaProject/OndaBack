@@ -9,6 +9,7 @@ from apps.upload.models import File
 # from apps.upload.models import File
 from utils.models import TimestampModel
 
+
 class UserInterest(models.Model):
     user = models.ForeignKey("user.User", on_delete=models.CASCADE)
     interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
@@ -17,6 +18,7 @@ class UserInterest(models.Model):
         db_table = "user_interest"
         verbose_name = "유저 관심사"
         verbose_name_plural = f"{verbose_name} 목록"
+
 
 # 사용자 지정 메니져
 class UserManager(BaseUserManager):
@@ -111,7 +113,7 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
     interests = models.ManyToManyField(
         "options.Interest",
         through="user.UserInterest",
-        related_name="users_with_interest"
+        related_name="users_with_interest",
     )
     digital_level = models.ForeignKey(
         "options.DigitalLevel",
