@@ -477,7 +477,9 @@ class CustomTokenRefreshView(APIView):
 # 유저 목록/검색 (관리자)
 class UserListView(ListAPIView):
     # queryset = User.objects.all()
-    queryset = User.objects.select_related("area", "digital_level", "file").prefetch_related("interests")
+    queryset = User.objects.select_related(
+        "area", "digital_level", "file"
+    ).prefetch_related("interests")
     serializer_class = UserListSerializer
     # permission_classes = [IsAuthenticated]
     permission_classes = [AdminOnly]
