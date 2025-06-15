@@ -5,20 +5,33 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    IsAuthenticated, 
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from utils.permissions import IsOwnerOrReadOnly
+from apps.user.models import UserRole
+from utils.permissions import (
+    IsOwnerOrReadOnly,
+    LeaderOnly
+)
 
 from .models import Meet, MeetApply
-from .serializers import MeetDetailSerializer, MeetSerializer
+from .serializers import MeetDetailSerializer, MeetListSerializer, MeetCreateSerializer
 
 
 # /api/meets [GET, POST]
 class MeetListCreateView(generics.ListCreateAPIView):
-    serializer_class = MeetSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return MeetCreateSerializer
+        return MeetListSerializer
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated(),LeaderOnly()]
+        return [IsAuthenticatedOrReadOnly()]
 
     @swagger_auto_schema(
         operation_summary="모임 목록 조회",
@@ -47,7 +60,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
         ],
     )
     def get_queryset(self):
-        queryset = Meet.objects.all().order_by("-created_at")
+        queryset = Meet.objects.select_related("area", "file", "user").order_by("-created_at")
         title = self.request.query_params.get("title")
         area = self.request.query_params.get("area")
         interest = self.request.query_params.get("interest")
@@ -65,7 +78,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
 
     @swagger_auto_schema(
         operation_summary="모임 등록",
-        request_body=MeetSerializer,
+        request_body=MeetCreateSerializer,
         responses={
             201: openapi.Response(
                 "Created",
@@ -80,9 +93,6 @@ class MeetListCreateView(generics.ListCreateAPIView):
         },
     )
     def create(self, request, *args, **kwargs):
-        if request.user.role != 2:
-            raise PermissionDenied("모임을 생성할 권한이 없습니다.")
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         meet = serializer.save(user=request.user)
