@@ -598,7 +598,7 @@ class UserListView(ListAPIView):
         return Response(serializer.data)
 
 
-# 유저 수정
+# 유저 상세, 수정, 삭제
 class ProfileView(RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     # queryset = User.objects.select_related("area","interest","digital_level")
@@ -624,11 +624,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
         # -> 각 요청마다 입/출력에 사용되는 데이터의 형식이 다르기 때문
         # print("요청 메서드:", self.request.method)
 
-        if self.request.method == "GET":
-            print("요청 메서드: GET")
-            return ProfileSerializer
-
-        elif self.request.method == "PATCH":
+        if self.request.method == "PATCH":
             print("요청 메서드: PATCH")
             return ProfileUpdateSerializer
 
