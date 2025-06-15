@@ -14,6 +14,8 @@ urlpatterns = [
     path("options/age-groups", AgeGroupListView.as_view(), name="option-age-groups"),
     path("options/categories", CategoryListView.as_view(), name="option-categories"),
     path(
-        "options/digital-levels", DigitalLevelListView.as_view(), name="option-digital-levels"
+        "options/digital-levels",
+        DigitalLevelListView.as_view(),
+        name="option-digital-levels",
     ),
 ]
