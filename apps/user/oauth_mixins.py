@@ -31,7 +31,7 @@ class GoogleProviderInfoMixin:
     def get_provider_info(self):
         return {
             "name": "구글",
-            # "provider": Provider.GOOGLE,
+            "provider": Provider.GOOGLE,
             "callback_url": "/users/google/callback",
             "callback_url_test": "/api/users/google/callback-test",
             "token_url": "https://oauth2.googleapis.com/token",
@@ -53,7 +53,7 @@ class NaverProviderInfoMixin:
     def get_provider_info(self):
         return {
             "name": "네이버",
-            # "provider": Provider.NAVER,
+            "provider": Provider.NAVER,
             "callback_url": "/users/naver/callback",
             "callback_url_test": "/api/users/naver/callback-test",
             "token_url": "https://nid.naver.com/oauth2.0/token",

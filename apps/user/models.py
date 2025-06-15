@@ -10,6 +10,16 @@ from apps.upload.models import File
 from utils.models import TimestampModel
 
 
+class UserInterest(models.Model):
+    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
+    interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "user_interest"
+        verbose_name = "유저 관심사"
+        verbose_name_plural = f"{verbose_name} 목록"
+
+
 # 사용자 지정 메니져
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **kwargs):
@@ -71,6 +81,8 @@ class UserRole(IntEnum):
 class Provider(IntEnum):
     HOME = 0  # 일반  name:HOME  value:0
     KAKAO = 1  # 카카오  name:KAKAO  value:1
+    NAVER = 2  # 네이버  name:NAVER  value:2
+    GOOGLE = 3  # 구글  name:GOOGLE  value:3
 
     @classmethod
     def choices(cls):
@@ -98,12 +110,10 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         null=True,
         related_name="+",
     )
-    interest = models.ForeignKey(
+    interests = models.ManyToManyField(
         "options.Interest",
-        verbose_name="관심사",
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="+",
+        through="user.UserInterest",
+        related_name="users_with_interest",
     )
     digital_level = models.ForeignKey(
         "options.DigitalLevel",

@@ -9,6 +9,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.options.models import Interest
 from apps.options.serializers.area import AreaSerializer
 from apps.options.serializers.digital_level import DigitalLevelSerializer
 from apps.options.serializers.interest import InterestSerializer
@@ -27,6 +28,9 @@ class UsernameSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
+    interests = serializers.PrimaryKeyRelatedField(
+        queryset=Interest.objects.all(), many=True, required=False
+    )
 
     class Meta:
         model = User
@@ -41,7 +45,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             "date_of_birth",
             # "age_group",
             "area",
-            "interest",
+            "interests",
             "digital_level",
             "file",
             # "created_at",
@@ -62,7 +66,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                     "phone_number": {"write_only": True},
                     "date_of_birth": {"write_only": True},
                     "area": {"write_only": True},
-                    "interest": {"write_only": True},
+                    "interests": {"write_only": True},
                     "digital_level": {"write_only": True},
                     "file": {"write_only": True},
                 }
@@ -91,8 +95,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         return super().validate(data)
 
     def create(self, validated_data):
-        # create_user() -> 비밀번호 해싱
-        return User.objects.create_user(**validated_data)
+        interests = validated_data.pop("interests", [])
+
+        # create_user 비밀번호 해싱 포함
+        user = User.objects.create_user(**validated_data)
+
+        if interests:
+            user.interests.set(interests)
+
+        return user
 
 
 class LogoutSerializer(serializers.Serializer):
@@ -114,9 +125,12 @@ class LogoutSerializer(serializers.Serializer):
 class UserListSerializer(serializers.ModelSerializer):
     # age_group = serializers.CharField(source="age_group.name", read_only=True)
     area = serializers.CharField(source="area.name", read_only=True)
-    interest = serializers.CharField(source="interest.name", read_only=True)
+    interests = serializers.SlugRelatedField(
+        slug_field="interest_name", read_only=True, many=True
+    )
     digital_level = serializers.CharField(source="digital_level.name", read_only=True)
-    file = FileSerializer(read_only=True)
+    file = serializers.CharField(source="file.file.url", read_only=True)
+    thumbnail = serializers.CharField(source="file.thumbnail.url", read_only=True)
 
     class Meta:
         model = User
@@ -129,9 +143,10 @@ class UserListSerializer(serializers.ModelSerializer):
             "date_of_birth",
             # "age_group",
             "area",
-            "interest",
+            "interests",
             "digital_level",
             "file",
+            "thumbnail",
             "created_at",
             "updated_at",
         ]
@@ -139,7 +154,7 @@ class UserListSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     area = AreaSerializer()
-    interest = InterestSerializer()
+    interests = InterestSerializer(many=True, read_only=True)
     digital_level = DigitalLevelSerializer()
     file = FileSerializer()
 
@@ -154,7 +169,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "date_of_birth",
             # "age_group",
             "area",
-            "interest",
+            "interests",
             "digital_level",
             "file",
             "created_at",
@@ -173,6 +188,9 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     current_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True)
     new_password_confirm = serializers.CharField(write_only=True)
+    interests = serializers.PrimaryKeyRelatedField(
+        queryset=Interest.objects.only("id"), many=True
+    )
     # area = AreaSerializer()
     # interest = InterestSerializer()
     # digital_level = DigitalLevelSerializer()
@@ -192,7 +210,7 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             "date_of_birth",
             # "age_group",
             "area",
-            "interest",
+            "interests",
             "digital_level",
             "file",
         ]

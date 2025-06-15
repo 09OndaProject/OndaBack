@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.user.models import Provider
 from apps.user.oauth_mixins import (
     KaKaoProviderInfoMixin,
 )
@@ -33,7 +34,7 @@ def get_social_login_params(provider_info, callback_url):
         "redirect_uri": callback_url,
         "state": state,
     }
-    if provider_info["name"] == "구글":
+    if provider_info["provider"] == Provider.GOOGLE:  # 구글
         params.update(
             {
                 "scope": "openid email profile",
@@ -173,7 +174,7 @@ class OAuthCallbackView(APIView, ABC):
         """
         requests 라이브러리를 활용하여 Oauth2 API 플랫폼에 액세스 토큰을 요청하는 함수
         """
-        if provider_info["name"] == "구글":
+        if provider_info["provider"] == Provider.GOOGLE:  # 구글
             return requests.post(
                 provider_info["token_url"],
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -217,7 +218,20 @@ class OAuthCallbackView(APIView, ABC):
         """
         # 각 provider의 프로필 데이터 처리 로직
 
-        if provider_info["name"] == "카카오":
+        if provider_info["provider"] == Provider.GOOGLE:  # 구글
+            email = profile_data.get(provider_info["email_field"])
+            name = profile_data.get(provider_info["name_field"], "")
+            nickname = profile_data.get(provider_info["nickname_field"], None)
+            return email, name, nickname
+
+        elif provider_info["provider"] == Provider.NAVER:  # 네이버
+            profile_data = profile_data.get("response", {})
+            email = profile_data.get(provider_info["email_field"])
+            name = profile_data.get(provider_info["name_field"], "")
+            nickname = profile_data.get(provider_info["nickname_field"], None)
+            return email, name, nickname
+
+        elif provider_info["provider"] == Provider.KAKAO:  # 카카오
             account_data = profile_data.get("kakao_account", {})
             email = account_data.get(provider_info["email_field"])
             profile_data = account_data.get("profile", {})

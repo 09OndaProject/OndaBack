@@ -477,7 +477,9 @@ class CustomTokenRefreshView(APIView):
 # 유저 목록/검색 (관리자)
 class UserListView(ListAPIView):
     # queryset = User.objects.all()
-    queryset = User.objects.select_related("area", "interest", "digital_level", "file")
+    queryset = User.objects.select_related(
+        "area", "digital_level", "file"
+    ).prefetch_related("interests")
     serializer_class = UserListSerializer
     # permission_classes = [IsAuthenticated]
     permission_classes = [AdminOnly]
@@ -509,8 +511,8 @@ class UserListView(ListAPIView):
         if area := query.get("area"):
             q &= Q(area__id=area)  # 외래키 이름 검색 가정
 
-        if interest := query.get("interest"):
-            q &= Q(interest__id=interest)
+        # if interest := query.get("interest"):
+        #     q &= Q(interest__id=interest)
 
         if digital_level := query.get("digital_level"):
             q &= Q(digital_level__id=digital_level)
@@ -570,12 +572,6 @@ class UserListView(ListAPIView):
                 type=openapi.TYPE_INTEGER,
             ),
             openapi.Parameter(
-                "interest",
-                openapi.IN_QUERY,
-                description="관심사 ID",
-                type=openapi.TYPE_INTEGER,
-            ),
-            openapi.Parameter(
                 "digital_level",
                 openapi.IN_QUERY,
                 description="디지털 레벨 ID",
@@ -598,7 +594,7 @@ class UserListView(ListAPIView):
         return Response(serializer.data)
 
 
-# 유저 수정
+# 유저 상세, 수정, 삭제
 class ProfileView(RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     # queryset = User.objects.select_related("area","interest","digital_level")
@@ -624,11 +620,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
         # -> 각 요청마다 입/출력에 사용되는 데이터의 형식이 다르기 때문
         # print("요청 메서드:", self.request.method)
 
-        if self.request.method == "GET":
-            print("요청 메서드: GET")
-            return ProfileSerializer
-
-        elif self.request.method == "PATCH":
+        if self.request.method == "PATCH":
             print("요청 메서드: PATCH")
             return ProfileUpdateSerializer
 
