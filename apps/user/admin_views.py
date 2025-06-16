@@ -155,7 +155,7 @@ class AdminUserViewSet(ModelViewSet):
         operation_summary="유저 생성",
     )
     def create(self, request, *args, **kwargs):
-        return super().create(self, request, *args, **kwargs)
+        return super().create(request, *args, **kwargs)
 
     @swagger_auto_schema(
         tags=["관리자/유저"],
