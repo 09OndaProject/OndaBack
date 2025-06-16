@@ -62,7 +62,10 @@ class OauthLoginRedirectView(APIView, ABC):
     )
     def get(self, request, *args, **kwargs):
         provider_info = self.get_provider_info()
-        callback_url = request.META.get("HTTP_ORIGIN", settings.FRONTEND_URL) + provider_info["callback_url"]
+        callback_url = (
+            request.META.get("HTTP_ORIGIN", settings.FRONTEND_URL)
+            + provider_info["callback_url"]
+        )
         params = get_social_login_params(provider_info, callback_url)
         login_url = f"{provider_info['login_url']}?{urlencode(params)}"
         return redirect(login_url)
