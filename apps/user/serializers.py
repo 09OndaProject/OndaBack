@@ -6,16 +6,54 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.options.models import Interest
-from apps.options.serializers.area import AreaSerializer
+from apps.options.serializers.area import AreaWithFullPathSerializer
 from apps.options.serializers.digital_level import DigitalLevelSerializer
 from apps.options.serializers.interest import InterestSerializer
 from apps.upload.serializers import FileSerializer
 
 User = get_user_model()
+
+
+class UserListSerializer(serializers.ModelSerializer):
+    # age_group = serializers.CharField(source="age_group.name", read_only=True)
+    area = serializers.CharField(source="area.full_path", read_only=True)
+    interests = serializers.SlugRelatedField(
+        slug_field="interest_name", read_only=True, many=True
+    )
+    digital_level = serializers.CharField(
+        source="digital_level.description", read_only=True
+    )
+    file = serializers.CharField(source="file.file.url", read_only=True)
+    thumbnail = serializers.CharField(source="file.thumbnail.url", read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "name",
+            "nickname",
+            "phone_number",
+            "date_of_birth",
+            # "age_group",
+            "area",
+            "interests",
+            "digital_level",
+            "file",
+            "thumbnail",
+            "created_at",
+            "updated_at",
+        ]
+
+    # serializer.data 출력 값 변환
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if phone_number := data.get("phone_number"):
+            data["phone_number"] = format_phone(phone_number)
+        return data
 
 
 class UsernameSerializer(serializers.ModelSerializer):
@@ -122,38 +160,8 @@ class LogoutSerializer(serializers.Serializer):
             raise ValidationError({"detail": "유효하지 않은 리프레시 토큰입니다."})
 
 
-class UserListSerializer(serializers.ModelSerializer):
-    # age_group = serializers.CharField(source="age_group.name", read_only=True)
-    area = serializers.CharField(source="area.name", read_only=True)
-    interests = serializers.SlugRelatedField(
-        slug_field="interest_name", read_only=True, many=True
-    )
-    digital_level = serializers.CharField(source="digital_level.name", read_only=True)
-    file = serializers.CharField(source="file.file.url", read_only=True)
-    thumbnail = serializers.CharField(source="file.thumbnail.url", read_only=True)
-
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "email",
-            "name",
-            "nickname",
-            "phone_number",
-            "date_of_birth",
-            # "age_group",
-            "area",
-            "interests",
-            "digital_level",
-            "file",
-            "thumbnail",
-            "created_at",
-            "updated_at",
-        ]
-
-
 class ProfileSerializer(serializers.ModelSerializer):
-    area = AreaSerializer()
+    area = AreaWithFullPathSerializer()
     interests = InterestSerializer(many=True, read_only=True)
     digital_level = DigitalLevelSerializer()
     file = FileSerializer()
@@ -249,7 +257,8 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         new_password = data.get("new_password")
         new_password_confirm = data.get("new_password_confirm")
         phone_number = data.get("phone_number")
-        user = self.context["request"].user
+        # user = self.context["request"].user  # 로그인한 유저
+        user = self.instance  # get_object()한 유저 인스턴스
 
         if current_password:
             if not user.check_password(current_password):

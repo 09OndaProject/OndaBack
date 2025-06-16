@@ -10,16 +10,6 @@ from apps.upload.models import File
 from utils.models import TimestampModel
 
 
-class UserInterest(models.Model):
-    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
-    interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = "user_interest"
-        verbose_name = "유저 관심사"
-        verbose_name_plural = f"{verbose_name} 목록"
-
-
 # 사용자 지정 메니져
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **kwargs):
@@ -66,6 +56,16 @@ class UserManager(BaseUserManager):
 # 해시화 qwer1234 -> aslkfjdslkfj322kj43 -> 일부분 암호화(aslkfj) -> 암호화를 반복 -> sldkfjsdlf -> 소실된 부분 때문에 복호화가 불가능
 # 장고는 SHA256를 사용
 # SHA-256은 암호학에서 사용하는 해시 함수(haash function) 중 하나예요. 주로 데이터 무결성 확인, 비밀번호 저장, 디지털 서명, 블록체인 같은 곳에 쓰임.
+
+
+class UserInterest(models.Model):
+    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
+    interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "user_interest"
+        verbose_name = "유저 관심사"
+        verbose_name_plural = f"{verbose_name} 목록"
 
 
 class UserRole(IntEnum):
