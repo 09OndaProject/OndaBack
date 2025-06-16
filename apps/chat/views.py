@@ -1,10 +1,10 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from apps.chat.models import GroupChatRoom, GroupChatMembership
+from apps.chat.models import GroupChatMembership, GroupChatRoom
 from apps.meet.models import Meet, MeetApply
 
 
@@ -20,7 +20,7 @@ class JoinGroupChatView(APIView):
         if not is_participant and meet.user != request.user:
             return Response(
                 {"detail": "모임에 참여하지 않은 유저입니다."},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         # 3. 채팅방이 없으면 생성
@@ -31,5 +31,5 @@ class JoinGroupChatView(APIView):
 
         return Response(
             {"room_id": room.id, "message": "채팅방에 입장했습니다."},
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )

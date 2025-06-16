@@ -84,12 +84,12 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls"
 
 # Redis 설정
-ASGI_APPLICATION = 'OndaBack.asgi.application'
+ASGI_APPLICATION = "OndaBack.asgi.application"
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
         },
     },
 }

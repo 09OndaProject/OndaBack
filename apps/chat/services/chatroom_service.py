@@ -1,5 +1,6 @@
-from chat.models import GroupChatRoom, GroupChatMembership
+from chat.models import GroupChatMembership, GroupChatRoom
 from meet.models import MeetApply
+
 
 #  채팅방이 없는 경우 새로 만들고, 해당 유저를 참여자로 추가하는 로직
 def join_or_create_chatroom(user, meet):
@@ -7,7 +8,9 @@ def join_or_create_chatroom(user, meet):
     room, created = GroupChatRoom.objects.get_or_create(meet=meet)
 
     # 해당 유저가 모임에 참여한 상태인지 확인
-    is_participant = MeetApply.objects.filter(user=user, meet=meet).exists() or (meet.user == user)
+    is_participant = MeetApply.objects.filter(user=user, meet=meet).exists() or (
+        meet.user == user
+    )
     if not is_participant:
         raise PermissionError("모임에 참여하지 않은 유저는 채팅에 참여할 수 없습니다.")
 

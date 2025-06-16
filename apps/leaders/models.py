@@ -29,7 +29,6 @@ class LeaderApplication(models.Model):
     # 다중 선택 가능 (JSON으로 저장)
     certificate_type = models.JSONField(verbose_name="자격증 종류")
 
-
     # 반복 가능한 활동 사례 (별도 테이블로 구성)
     status = models.CharField(
         max_length=10,
