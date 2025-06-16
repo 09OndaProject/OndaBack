@@ -37,27 +37,21 @@ class ReviewSummaryView(generics.GenericAPIView):
                 description="모임 ID",
                 type=openapi.TYPE_INTEGER,
                 required=True,
-            )
+            ),
         ],
         responses={
             200: openapi.Response("리뷰 요약 정보", ReviewDisplaySerializer(many=True))
         },
     )
     def get(self, request, meet_id):
-        meet = get_object_or_404(Meet, id=meet_id)
-        if meet.is_deleted:
-            return Response(
-                {
-                    "average_rating": 0,
-                    "review_count": 0,
-                    "top_reviews": [],
-                }
-            )
+        meet = get_object_or_404(Meet, id=meet_id, is_deleted=False)
 
-        top_reviews = Review.objects.filter(meet=meet).order_by(
-            "-rating", "-created_at"
-        )[:4]
-
+        # 삭제된 모임이어도 리뷰는 통계 집계 (요약에 포함)
+        top_reviews = (
+            Review.objects.filter(meet=meet)
+            .select_related("user")
+            .order_by("-rating", "-created_at")[:4]
+        )
         summary = Review.objects.filter(meet=meet).aggregate(
             avg=Avg("rating"), count=Count("id")
         )
@@ -72,16 +66,19 @@ class ReviewSummaryView(generics.GenericAPIView):
         )
 
 
-# 후기 목록 / 작성
+# 후기 목록 + 작성
 class ReviewListCreateView(generics.ListCreateAPIView):
     serializer_class = ReviewDisplaySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = ReviewPagination
 
     def get_queryset(self):
-        return Review.objects.filter(
-            meet_id=self.kwargs["meet_id"], meet__is_deleted=False
-        ).order_by("-created_at")
+        # 삭제된 모임 제외
+        return (
+            Review.objects.select_related("user", "meet")
+            .filter(meet_id=self.kwargs["meet_id"], meet__is_deleted=False)
+            .order_by("-created_at")
+        )
 
     @swagger_auto_schema(
         operation_summary="리뷰 목록 조회",
@@ -97,26 +94,26 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         ],
         responses={200: ReviewDisplaySerializer(many=True)},
     )
-    def list(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         page = self.paginate_queryset(queryset)
         summary = queryset.aggregate(avg=Avg("rating"))
 
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(
+        serializer = self.get_serializer(page or queryset, many=True)
+        return (
+            self.get_paginated_response(
                 {
                     "average_rating": round(summary["avg"] or 0, 2),
                     "reviews": serializer.data,
                 }
             )
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(
-            {
-                "average_rating": round(summary["avg"] or 0, 2),
-                "reviews": serializer.data,
-            }
+            if page
+            else Response(
+                {
+                    "average_rating": round(summary["avg"] or 0, 2),
+                    "reviews": serializer.data,
+                }
+            )
         )
 
     @swagger_auto_schema(
@@ -125,41 +122,30 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         request_body=ReviewCreateSerializer,
         responses={201: ReviewDisplaySerializer()},
     )
-    def create(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         user = request.user
         meet_id = self.kwargs["meet_id"]
-        meet = get_object_or_404(Meet, id=meet_id)
+        meet = get_object_or_404(Meet, id=meet_id, is_deleted=False)
 
-        if meet.is_deleted:
-            raise ValidationError("삭제된 모임에는 리뷰를 작성할 수 없습니다.")
-
-        # 참가 여부 확인
         if not MeetApply.objects.filter(user=user, meet=meet).exists():
-            raise ValidationError(
-                "이 모임에 참가하지 않았습니다. 리뷰 작성이 불가능합니다."
-            )
+            raise ValidationError("이 모임에 참가하지 않았습니다.")
 
-        # 리뷰 작성 기간 제한 (모임 종료 후 14일 이내)
-        if meet.date:
-            now = timezone.now().date()
-            if now < meet.date:
-                raise ValidationError("모임이 종료된 후에만 리뷰를 작성할 수 있습니다.")
-            if now > meet.date + timedelta(days=14):
-                raise ValidationError(
-                    "모임 종료 후 14일이 지나 리뷰 작성이 불가능합니다."
-                )
-
-        # 중복 리뷰 방지
         if Review.objects.filter(user=user, meet=meet).exists():
             raise ValidationError("이미 리뷰를 작성하셨습니다.")
+
+        today = timezone.now().date()
+        if today < meet.date:
+            raise ValidationError("모임이 종료된 후에만 리뷰를 작성할 수 있습니다.")
+        if today > meet.date + timedelta(days=14):
+            raise ValidationError("모임 종료 후 14일이 지나 리뷰 작성이 불가능합니다.")
 
         serializer = ReviewCreateSerializer(
             data=request.data, context=self.get_serializer_context()
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=user, meet=meet)
+        review = serializer.save(user=user, meet=meet)
 
-        response_serializer = ReviewDisplaySerializer(serializer.instance)
+        response_serializer = ReviewDisplaySerializer(review)
         return Response(
             {
                 "message": "리뷰가 성공적으로 작성되었습니다.",
@@ -169,20 +155,16 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         )
 
 
-# 후기 상세 조회 / 수정 / 삭제
+# 후기 상세 (조회 / 수정 / 삭제)
 class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Review.objects.all()
+    queryset = Review.objects.select_related("user", "meet").all()
     serializer_class = ReviewDisplaySerializer
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
         IsOwnerOrReadOnlyWithin7Days,
     ]
 
-    @swagger_auto_schema(
-        operation_summary="리뷰 상세 조회",
-        tags=["리뷰 API"],
-        responses={200: ReviewDisplaySerializer()},
-    )
+    @swagger_auto_schema(operation_summary="리뷰 상세 조회", tags=["리뷰 API"])
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -190,7 +172,6 @@ class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
         operation_summary="리뷰 수정",
         tags=["리뷰 API"],
         request_body=ReviewCreateSerializer,
-        responses={200: ReviewDisplaySerializer()},
     )
     def patch(self, request, *args, **kwargs):
         response = super().partial_update(request, *args, **kwargs)
@@ -210,14 +191,34 @@ class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
         responses={204: openapi.Response("삭제 성공")},
     )
     def delete(self, request, *args, **kwargs):
-        response = super().destroy(request, *args, **kwargs)
+        super().destroy(request, *args, **kwargs)
         return Response(
-            {
-                "message": "리뷰가 성공적으로 삭제되었습니다.",
-            },
+            {"message": "리뷰가 성공적으로 삭제되었습니다."},
             status=status.HTTP_204_NO_CONTENT,
         )
 
     @swagger_auto_schema(auto_schema=None)
     def put(self, request, *args, **kwargs):
         raise MethodNotAllowed("PUT")
+
+
+# 내가 작성한 후기 목록
+class MyReviewListView(generics.ListAPIView):
+    serializer_class = ReviewDisplaySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = ReviewPagination
+
+    def get_queryset(self):
+        return (
+            Review.objects.select_related("user", "meet")
+            .filter(user=self.request.user)
+            .order_by("-created_at")
+        )
+
+    @swagger_auto_schema(
+        operation_summary="내가 작성한 리뷰 목록 조회",
+        tags=["리뷰 API"],
+        responses={200: ReviewDisplaySerializer(many=True)},
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
