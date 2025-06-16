@@ -28,6 +28,7 @@ User = get_user_model()
 
 def get_social_login_params(provider_info, callback_url):
     state = signing.dumps(provider_info["state"])
+    print(callback_url)
     params = {
         "response_type": "code",
         "client_id": provider_info["client_id"],
@@ -61,7 +62,10 @@ class OauthLoginRedirectView(APIView, ABC):
     )
     def get(self, request, *args, **kwargs):
         provider_info = self.get_provider_info()
-        callback_url = settings.FRONTEND_URL + provider_info["callback_url"]
+        callback_url = (
+            request.META.get("HTTP_ORIGIN", settings.FRONTEND_URL)
+            + provider_info["callback_url"]
+        )
         params = get_social_login_params(provider_info, callback_url)
         login_url = f"{provider_info['login_url']}?{urlencode(params)}"
         return redirect(login_url)
@@ -109,6 +113,7 @@ class OAuthCallbackView(APIView, ABC):
 
         # 소셜로그인에 필요한 redirect_uri, client_id, grant_type 등의 provider_info 를 가져옴
         provider_info = self.get_provider_info()
+        provider_info["host"] = request.META.get("HTTP_ORIGIN", settings.FRONTEND_URL)
 
         # 엑세스 토큰 요청
         token_response = self.get_access_token(code, provider_info)
@@ -181,7 +186,7 @@ class OAuthCallbackView(APIView, ABC):
                 data={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "redirect_uri": settings.FRONTEND_URL
+                    "redirect_uri": provider_info["host"]
                     + provider_info["callback_url"],
                     "client_id": provider_info["client_id"],
                     "client_secret": provider_info["client_secret"],
