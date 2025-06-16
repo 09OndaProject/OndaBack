@@ -201,6 +201,7 @@ class VerifyEmailView(APIView):
         except Exception:
             params = {
                 "message": "유효하지 않은 인증 코드입니다.",
+                "verified": False,
             }
             url = f"{settings.FRONTEND_URL}/users/verify/email?{urlencode(params)}"
             return redirect(url)
@@ -474,130 +475,12 @@ class CustomTokenRefreshView(APIView):
         return final_response
 
 
-# 유저 목록/검색 (관리자)
-class UserListView(ListAPIView):
-    # queryset = User.objects.all()
-    queryset = User.objects.select_related(
-        "area", "digital_level", "file"
-    ).prefetch_related("interests")
-    serializer_class = UserListSerializer
-    # permission_classes = [IsAuthenticated]
-    permission_classes = [AdminOnly]
-    authentication_classes = [JWTAuthentication]  # JWT 인증
-    pagination_class = CustomPageNumberPagination
-
-    def get_queryset(self):
-        query = self.request.query_params
-        q = Q()
-
-        # :=는 Python 3.8 이상에서 도입된 **"월러스 연산자 (walrus operator)"**입니다.
-        # 이 연산자는 할당과 동시에 표현식 안에서 변수 사용이 가능하게 해줍니다.
-
-        if email := query.get("email"):
-            q &= Q(email__icontains=email)  # 부분 일치 검색
-
-        if name := query.get("name"):
-            q &= Q(name__icontains=name)
-
-        if nickname := query.get("nickname"):
-            q &= Q(nickname__icontains=nickname)
-
-        if phone_number := query.get("phone_number"):
-            q &= Q(phone_number__icontains=phone_number)
-
-        if date_of_birth := query.get("date_of_birth"):
-            q &= Q(date_of_birth=date_of_birth)  # 정확 일치
-
-        if area := query.get("area"):
-            q &= Q(area__id=area)  # 외래키 이름 검색 가정
-
-        # if interest := query.get("interest"):
-        #     q &= Q(interest__id=interest)
-
-        if digital_level := query.get("digital_level"):
-            q &= Q(digital_level__id=digital_level)
-
-        if role := query.get("role"):
-            try:
-                role_value = UserRole[role.upper()].value
-                q &= Q(role=role_value)
-            except KeyError:
-                pass
-
-        return self.queryset.filter(q).order_by("-created_at")
-
-    # 예: ListAPIView 또는 ViewSet.get_queryset 에 해당하는 list()
-    @swagger_auto_schema(
-        tags=["관리자/유저 목록"],
-        operation_summary="관리자용 유저 목록",
-        manual_parameters=[
-            openapi.Parameter(
-                "email",
-                openapi.IN_QUERY,
-                description="이메일",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "name", openapi.IN_QUERY, description="이름", type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                "nickname",
-                openapi.IN_QUERY,
-                description="닉네임",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "phone_number",
-                openapi.IN_QUERY,
-                description="전화번호",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "date_of_birth",
-                openapi.IN_QUERY,
-                description="생년월일",
-                type=openapi.TYPE_STRING,
-                format="date",
-            ),
-            openapi.Parameter(
-                "role",
-                openapi.IN_QUERY,
-                description="유저 역할(admin, user, leader)",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "area",
-                openapi.IN_QUERY,
-                description="지역 ID",
-                type=openapi.TYPE_INTEGER,
-            ),
-            openapi.Parameter(
-                "digital_level",
-                openapi.IN_QUERY,
-                description="디지털 레벨 ID",
-                type=openapi.TYPE_INTEGER,
-            ),
-        ],
-    )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-
 # 유저 상세, 수정, 삭제
 class ProfileView(RetrieveUpdateDestroyAPIView):
-    queryset = User.objects.all()
-    # queryset = User.objects.select_related("area","interest","digital_level")
+    # queryset = User.objects.all()
+    queryset = User.objects.select_related(
+        "area", "area__parent", "area__parent__parent", "digital_level", "file"
+    ).prefetch_related("interests")
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated]  # 인증된 사용자만 데이터 접근 가능
     authentication_classes = [JWTAuthentication]  # JWT 인증

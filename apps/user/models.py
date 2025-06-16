@@ -68,6 +68,16 @@ class UserManager(BaseUserManager):
 # SHA-256은 암호학에서 사용하는 해시 함수(haash function) 중 하나예요. 주로 데이터 무결성 확인, 비밀번호 저장, 디지털 서명, 블록체인 같은 곳에 쓰임.
 
 
+class UserInterest(models.Model):
+    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
+    interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "user_interest"
+        verbose_name = "유저 관심사"
+        verbose_name_plural = f"{verbose_name} 목록"
+
+
 class UserRole(IntEnum):
     ADMIN = 0  # 관리자  name:ADMIN  value:0
     USER = 1  # 유저  name:USER  value:1

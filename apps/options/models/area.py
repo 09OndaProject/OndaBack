@@ -16,3 +16,12 @@ class Area(models.Model):
 
     def __str__(self):
         return f"{self.area_name} ({self.depth})"
+
+    @property
+    def full_path(self):
+        names = [self.area_name]
+        parent = self.parent
+        while parent:
+            names.append(parent.area_name)
+            parent = parent.parent
+        return " ".join(reversed(names))

@@ -13,9 +13,7 @@ ALLOWED_HOSTS = [
 ]  # EC2 퍼블릭 IP
 
 # 소셜로그인에 사용할 url
-# FRONTEND_URL = "https://www.ondamoim.com"
-FRONTEND_URL = "http://localhost:3000"
-# FRONTEND_URL = "http://localhost:5173"
+FRONTEND_URL = ENV.get("FRONTEND_URL", "http://127.0.0.1:8000/api")
 
 # 시크릿 키를 ENV 변수에 저장된 딕셔너리에서 가져옵니다. 만약 파일에서 읽어온 시크릿 키가 존재하지 않는다면 50자리의 무작위 문자열을 반환합니다.
 SECRET_KEY = ENV.get(

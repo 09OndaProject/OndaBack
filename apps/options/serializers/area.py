@@ -29,3 +29,23 @@ class AreaSerializer(serializers.ModelSerializer):
                 children, many=True, context={"depth": current_depth + 1}
             ).data
         return []
+
+
+class AreaWithParentsSerializer(serializers.ModelSerializer):
+    parent = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Area
+        fields = ["id", "area_name", "depth", "parent"]
+
+    def get_parent(self, obj):
+        if obj.parent:
+            return AreaWithParentsSerializer(obj.parent).data
+        return None
+
+
+class AreaWithFullPathSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Area
+        fields = ["id", "area_name", "depth", "parent", "full_path"]
