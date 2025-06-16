@@ -2,12 +2,21 @@ from enum import IntEnum
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 
 from apps.options.models import Area, DigitalLevel, Interest
 from apps.upload.models import File
-
-# from apps.upload.models import File
 from utils.models import TimestampModel
+
+
+class UserInterest(models.Model):
+    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
+    interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "user_interest"
+        verbose_name = "유저 관심사"
+        verbose_name_plural = f"{verbose_name} 목록"
 
 
 # 사용자 지정 메니져
@@ -132,14 +141,17 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         default=UserRole.USER.value,
         choices=UserRole.choices(),
     )
-
     last_login = models.DateTimeField(
         verbose_name="마지막 로그인", blank=True, null=True
     )
-
     is_active = models.BooleanField(
         verbose_name="계정 활성화", default=False
     )  # 기본적으로 비활성화 시켜놓고 확인 절차를 거친 후 활성화
+    is_deleted = models.BooleanField(verbose_name="계정 삭제 여부", default=False)
+    deleted_at = models.DateTimeField(
+        verbose_name="계정 삭제 날짜",
+        null=True,
+    )
 
     # 사용자 지정 메니져
     # User.objects.all()   <- objects가 메니져
@@ -189,6 +201,13 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         return self.is_superuser
 
     ############################################
+
+    def delete(self, using=None, keep_parents=False):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.email = f"{self.email}__deleted__{self.pk}"
+        self.nickname = f"{self.nickname}__deleted__{self.pk}"
+        self.save()
 
 
 # @property

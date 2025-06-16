@@ -9,6 +9,12 @@ CERTIFICATE_TYPE_CHOICES = [
     ("경력증명서", "경력증명서"),
 ]
 
+# 자격증 유형 선택지 (라디오 버튼 선택용)
+CERTIFICATE_TYPE_CHOICES = [
+    ("자격증", "자격증"),
+    ("경력증명서", "경력증명서"),
+]
+
 
 class LeaderApplicationStatus(models.TextChoices):
     PENDING = "pending", "대기중"
