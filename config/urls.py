@@ -26,6 +26,7 @@ env = settings.ENV.get("DJANGO_ENV", "local")
 
 urlpatterns = [
     path("api/", include("apps.user.urls")),
+    path("api/", include("apps.user.admin_urls")),
     path("api/", include("apps.upload.urls")),
     path("api/", include("apps.reviews.urls")),
     path("api/", include("apps.options.urls")),
