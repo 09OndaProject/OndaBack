@@ -1,8 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-# 향후 파일 업로드 모델과 연결할 예정 (주석처리)
-# from apps.upload.models import File
+from apps.upload.models import File
 
 # 자격증 유형 선택지 (라디오 버튼 선택용)
 CERTIFICATE_TYPE_CHOICES = [
@@ -30,13 +29,6 @@ class LeaderApplication(models.Model):
     # 다중 선택 가능 (JSON으로 저장)
     certificate_type = models.JSONField(verbose_name="자격증 종류")
 
-    # 향후 파일 업로드 기능 주석처리 상태
-    # certificate_upload = models.ManyToManyField(
-    #     File,
-    #     blank=True,
-    #     related_name='leader_certificate_files',
-    #     verbose_name='자격증 파일들'
-    # )
 
     # 반복 가능한 활동 사례 (별도 테이블로 구성)
     status = models.CharField(
