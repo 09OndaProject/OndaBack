@@ -48,7 +48,11 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        exclude = ["last_login", "created_at", "updated_at",]
+        exclude = [
+            "last_login",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["id"]
         extra_kwargs = {
             "password": {"write_only": True},
