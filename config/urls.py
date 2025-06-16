@@ -34,7 +34,6 @@ urlpatterns = [
     path("api/", include("apps.meet.urls")),
     path("api/", include("apps.posts.urls")),
     path("api/", include("apps.chat.urls")),
-
 ]
 
 if settings.DEBUG:
