@@ -6,24 +6,23 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import (
-    IsAuthenticated, 
+    IsAuthenticated,
     IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from apps.options.models import Area
-from utils.permissions import (
-    IsOwnerOrReadOnly,
-    LeaderOnly
-)
+from utils.permissions import IsOwnerOrReadOnly, LeaderOnly
 
 from .models import Meet, MeetApply
 from .serializers import (
-    MeetDetailSerializer, 
-    MeetListSerializer, 
-    MeetCreateSerializer, 
-    MeetUpdateSerializer
+    MeetCreateSerializer,
+    MeetDetailSerializer,
+    MeetListSerializer,
+    MeetUpdateSerializer,
 )
+
 
 # /api/meets [GET, POST]
 class MeetListCreateView(generics.ListCreateAPIView):
@@ -31,43 +30,42 @@ class MeetListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return MeetCreateSerializer
         return MeetListSerializer
-    
+
     def get_permissions(self):
-        if self.request.method == 'POST':
-            return [IsAuthenticated(),LeaderOnly()]
+        if self.request.method == "POST":
+            return [IsAuthenticated(), LeaderOnly()]
         return [IsAuthenticatedOrReadOnly()]
 
     @swagger_auto_schema(
-    operation_summary="모임 목록 조회",
-    manual_parameters=[
-        openapi.Parameter(
-            "title",
-            openapi.IN_QUERY,
-            type=openapi.TYPE_STRING,
-            description="모임 제목",
-        ),
-        openapi.Parameter(
-            "area",
-            openapi.IN_QUERY,
-            type=openapi.TYPE_INTEGER,
-            description="지역",
-        ),
-        openapi.Parameter(
-            "category",
-            openapi.IN_QUERY,
-            type=openapi.TYPE_STRING,
-            description="카테고리",
-        ),
-        openapi.Parameter(
-            "digital_level",
-            openapi.IN_QUERY,
-            type=openapi.TYPE_INTEGER,
-            description="디지털 수준",
-        ),
-    ],
-    responses={200: MeetListSerializer(many=True)},
-)
-    
+        operation_summary="모임 목록 조회",
+        manual_parameters=[
+            openapi.Parameter(
+                "title",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description="모임 제목",
+            ),
+            openapi.Parameter(
+                "area",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                description="지역",
+            ),
+            openapi.Parameter(
+                "category",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description="카테고리",
+            ),
+            openapi.Parameter(
+                "digital_level",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                description="디지털 수준",
+            ),
+        ],
+        responses={200: MeetListSerializer(many=True)},
+    )
     def get_all_descendant_area_ids(self, area, visited=None):
         if visited is None:
             visited = set()
@@ -82,9 +80,11 @@ class MeetListCreateView(generics.ListCreateAPIView):
             result += self.get_all_descendant_area_ids(child, visited)
 
         return result
-    
+
     def get_queryset(self):
-        queryset = Meet.objects.select_related("area", "file", "user").order_by("-created_at")
+        queryset = Meet.objects.select_related("area", "file", "user").order_by(
+            "-created_at"
+        )
         title = self.request.query_params.get("title")
         area_id = self.request.query_params.get("area")
         category = self.request.query_params.get("category")
@@ -92,7 +92,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
 
         if title:
             queryset = queryset.filter(title__icontains=title)
-            
+
         if area_id:
             try:
                 area = Area.objects.prefetch_related("children").get(id=area_id)
@@ -100,34 +100,36 @@ class MeetListCreateView(generics.ListCreateAPIView):
                 queryset = queryset.filter(area_id__in=area_ids)
             except Area.DoesNotExist:
                 queryset = queryset.none()
-                
+
         if category:
             queryset = queryset.filter(category=category)
-            
+
         if digital_level:
             queryset = queryset.filter(digital_level=digital_level)
-            
+
         return queryset
 
     @swagger_auto_schema(
-    operation_summary="모임 등록",
-    request_body=MeetCreateSerializer,
-    responses={
-        201: openapi.Response(
-            description="모임 생성 성공",
-            schema=openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    "message": openapi.Schema(type=openapi.TYPE_STRING, example="모임 생성이 완료 되었습니다"),
-                    "id": openapi.Schema(type=openapi.TYPE_INTEGER, example=1),
-                },
+        operation_summary="모임 등록",
+        request_body=MeetCreateSerializer,
+        responses={
+            201: openapi.Response(
+                description="모임 생성 성공",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "message": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="모임 생성이 완료 되었습니다",
+                        ),
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER, example=1),
+                    },
+                ),
             ),
-        ),
-        400: "잘못된 요청",
-        403: "권한 없음",
-    },
-)
-    
+            400: "잘못된 요청",
+            403: "권한 없음",
+        },
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -142,8 +144,8 @@ class MeetListCreateView(generics.ListCreateAPIView):
 class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Meet.objects.all()
     lookup_url_kwarg = "meet_id"
-    permission_classes=[IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
-    
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+
     def get_serializer_class(self):
         if self.request.method == "PATCH":
             return MeetUpdateSerializer
