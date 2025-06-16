@@ -24,10 +24,8 @@ class AreaSerializer(serializers.ModelSerializer):
             return []
 
         children = obj.children.all().order_by("id")
-        return (
-            AreaSerializer(
+        if children:
+            return AreaSerializer(
                 children, many=True, context={"depth": current_depth + 1}
             ).data
-            if children.exists()
-            else []
-        )
+        return []
