@@ -55,7 +55,7 @@ class Meet(TimestampModel):
         max_length=255, null=True, blank=True, verbose_name="상세주소"
     )
     contact = models.CharField(
-        max_length=10,
+        max_length=50,
         choices=MeetContact.choices,
         default=MeetContact.ONLINE,
         verbose_name="진행방법",

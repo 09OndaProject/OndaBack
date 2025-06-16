@@ -200,7 +200,7 @@ class MeetApplyView(APIView):
 
 # /api/meets/users/{user_id} [GET]
 class MeetUserListView(generics.ListAPIView):
-    serializer_class = MeetSerializer
+    serializer_class = MeetListSerializer
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
