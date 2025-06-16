@@ -103,6 +103,45 @@ class LeaderSerializer(serializers.ModelSerializer):
             "file",
         ]
         
+class MeetUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Meet
+        fields = [
+            "title",
+            "description",
+            "area",
+            "digital_level",
+            "category",
+            "date",
+            "start_time",
+            "end_time",
+            "location",
+            "contact",
+            "session_count",
+            "max_people",
+            "application_deadline",
+            "link",
+            "file",
+        ]
+
+    def validate(self, data):
+        from django.utils import timezone
+        now = timezone.now()
+
+        application_deadline = data.get("application_deadline")
+        if application_deadline and application_deadline < now:
+            raise serializers.ValidationError({
+                "application_deadline": "마감일은 현재 시각보다 이후여야 합니다."
+            })
+
+        date = data.get("date")
+        if date and date < now.date():
+            raise serializers.ValidationError({
+                "date": "모임 날짜는 오늘 이후여야 합니다."
+            })
+
+        return data
+        
 class MeetDetailSerializer(serializers.ModelSerializer):
     status = serializers.ReadOnlyField()
     file=FileSerializer(read_only=True)

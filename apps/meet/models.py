@@ -16,6 +16,9 @@ class MeetContact(models.TextChoices):
     OFFLINE = "off-line", "오프라인"
     ONOFFLINE = "on/off-line", "온/오프라인"
 
+class ActiveMeetManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(is_deleted=True)
 
 class Meet(TimestampModel):
     @property
@@ -47,6 +50,9 @@ class Meet(TimestampModel):
     created_at = models.DateTimeField(auto_now_add=True,verbose_name="생성일")
     is_deleted = models.BooleanField(default=False,verbose_name="삭제요청")
     link = models.URLField(max_length=500,null=True,blank=True,verbose_name="오픈채팅방링크")
+    
+    objects = ActiveMeetManager()  # is_deleted=True 제거됨
+    all_objects = models.Manager()  # 원래 모든 queryset 접근용
     
     def __str__(self):
         return f"[{self.pk}] {self.title}"
