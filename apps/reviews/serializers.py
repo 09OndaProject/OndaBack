@@ -6,8 +6,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from apps.meet.models import Meet, MeetApply
-from .models import Review
 
+from .models import Review
 
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
@@ -45,6 +45,12 @@ class ReviewDisplaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = [
-            "id", "user_name", "rating", "content", "created_at",
-            "meet_title", "meet_date", "meet_location",
+            "id",
+            "user_name",
+            "rating",
+            "content",
+            "created_at",
+            "meet_title",
+            "meet_date",
+            "meet_location",
         ]
