@@ -26,12 +26,15 @@ env = settings.ENV.get("DJANGO_ENV", "local")
 
 urlpatterns = [
     path("api/", include("apps.user.urls")),
+    path("api/", include("apps.user.admin_urls")),
     path("api/", include("apps.upload.urls")),
     path("api/", include("apps.reviews.urls")),
     path("api/", include("apps.options.urls")),
     path("api/", include("apps.leaders.urls")),
     path("api/", include("apps.meet.urls")),
     path("api/", include("apps.posts.urls")),
+    path("api/", include("apps.chat.urls")),
+
 ]
 
 if settings.DEBUG:

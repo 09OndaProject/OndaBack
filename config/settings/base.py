@@ -50,6 +50,7 @@ DJANGO_APPS = [
 ]
 
 OWN_APPS = [
+    "apps.chat",
     "apps.user",
     "apps.upload",
     "apps.options",
@@ -60,6 +61,7 @@ OWN_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "channels",
     "rest_framework",
     "rest_framework_simplejwt",  # poetry add djangorestframework-simplejwt
     "rest_framework_simplejwt.token_blacklist",
@@ -106,6 +108,17 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 ROOT_URLCONF = "config.urls"
+
+# Redis 설정
+ASGI_APPLICATION = "OndaBack.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 TEMPLATES = [
     {
