@@ -34,12 +34,17 @@ class UserAdmin(admin.ModelAdmin):
         "email",
         "nickname",
         "name",
+        "role",
         "is_active",
         "created_at",
         "updated_at",
     )  # 관리자 목록 페이지에 보여줄 컬럼
     list_filter = ("is_active",)  # 필터 사이드바에 표시할 필드
-    search_fields = ("email", "nickname", "name")  # 검색창을 통해 검색할 수 있는 필드
+    search_fields = (
+        "email",
+        "nickname",
+        "name",
+    )  # 검색창을 통해 검색할 수 있는 필드
     ordering = ("-created_at",)  # 생성일 기준으로 최신순 정렬
     list_display_links = (
         "email",
@@ -54,15 +59,56 @@ class UserAdmin(admin.ModelAdmin):
             return (
                 (
                     "기본 정보",
-                    {"fields": ("email", "nickname", "name", "password1", "password2")},
+                    {
+                        "fields": (
+                            "email",
+                            "nickname",
+                            "name",
+                            "password1",
+                            "password2",
+                        )
+                    },
                 ),
-                ("권한", {"fields": ("is_active")}),
+                (
+                    "권한",
+                    {
+                        "fields": (
+                            "role",
+                            "is_active",
+                        )
+                    },
+                ),
             )
         # 유저 수정 페이지
         return (
-            ("기본 정보", {"fields": ("email", "nickname", "name")}),
-            ("권한", {"fields": ("is_active")}),
-            ("기타 정보", {"fields": ("created_at", "updated_at")}),
+            (
+                "기본 정보",
+                {
+                    "fields": (
+                        "email",
+                        "nickname",
+                        "name",
+                    )
+                },
+            ),
+            (
+                "권한",
+                {
+                    "fields": (
+                        "role",
+                        "is_active",
+                    )
+                },
+            ),
+            (
+                "기타 정보",
+                {
+                    "fields": (
+                        "created_at",
+                        "updated_at",
+                    )
+                },
+            ),
         )
 
     def get_form(self, request, obj=None, **kwargs):
