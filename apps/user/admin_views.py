@@ -155,12 +155,12 @@ class AdminUserViewSet(ModelViewSet):
         operation_summary="유저 상세",
     )
     def retrieve(self, request, *args, **kwargs):
+        """
+        유저의 모든 정보를 표시 (비밀번호 제외)
+        """
         return super().retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        tags=["관리자/유저"],
-        operation_summary="유저 정보 전체 수정 (막음)",
-    )
+    @swagger_auto_schema(auto_schema=None)
     def update(self, request, *args, **kwargs):
         # PUT 요청 (전체 수정)만 차단
         if not kwargs.get("partial", False):
@@ -173,6 +173,9 @@ class AdminUserViewSet(ModelViewSet):
         operation_summary="유저 정보 일부 수정",
     )
     def partial_update(self, request, *args, **kwargs):
+        """
+        유저의 권한, 활성화 여부만 수정 가능
+        """
         return super().partial_update(request, *args, **kwargs)
 
     @swagger_auto_schema(

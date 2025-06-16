@@ -61,19 +61,19 @@ OWN_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    "channels",
     "rest_framework",
     "rest_framework_simplejwt",  # poetry add djangorestframework-simplejwt
-    "rest_framework_simplejwt.token_blacklist",
-    "drf_yasg",
-    "storages",
-    "corsheaders",
+    "rest_framework_simplejwt.token_blacklist",  # 블랙리스트(로그아웃 구현에 사용)
+    "drf_yasg",  # swagger 문서 자동화
+    "storages",  # 외부 스토리지를 연동
+    "corsheaders",  # CORS 설정
+    "channels",  # 채팅 관련
 ]
 
 INSTALLED_APPS = DJANGO_APPS + OWN_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # CORS 설정
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
