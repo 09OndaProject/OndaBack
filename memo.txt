@@ -1560,7 +1560,6 @@ develop 브랜치에 pr적용할 때 원하는 대상만 적용하고 싶으면
 git checkout develop  # 병합 대상 브랜치
 git fetch origin pull/36/head:pr-36  #pr을 불러옴
 git merge pr-36 --no-commit --no-ff
-git merge pr-19 --no-ff
 
 원하는 파일 적용 및 해제
 git restore --staged apps/user_schedule/migrations/000X_*.py
@@ -1790,3 +1789,18 @@ poetry export --without-hashes --with dev -f requirements.txt -o requirements.tx
 
 pip-sync requirements.txt
 하면 깔끔하게 정리
+
+
+origin = request.META.get("HTTP_ORIGIN")        # https://frontend.ondamoim.com         CORS 요청 시 브라우저가 항상 포함
+referer = request.META.get("HTTP_REFERER")      # https://frontend.ondamoim.com/page    일부 브라우저/환경에선 누락되거나 변경됨
+host = request.META.get("HTTP_HOST")            # api.ondamoim.com                      백엔드 자신의 호스트 정보라서 클라이언트 출처와는 무관
+client_ip = request.META.get("REMOTE_ADDR")     # 192.168.x.x
+
+HTTP_ORIGIN, HTTP_REFERER는 브라우저가 자동으로 붙이는 값이지만,
+Postman, cURL 등에서는 임의 조작이 가능하므로 절대 보안 판단 근거로 사용하지 마세요.
+
+소셜로그인과 관련해서는 문제없음.
+브라우저 기반 요청은 대부분 보안이 철저하며,
+서버와 OAuth 플랫폼이 "허용된 출처"와 "리디렉션 경로"만 허용하므로 조작 가능성은 매우 낮음
+CORS, 소셜 로그인 설정 등에서 출처(origin)/redirect URI가 정확히 일치해야 동작하므로,
+조작해서 우회하는 건 사실상 불가능
