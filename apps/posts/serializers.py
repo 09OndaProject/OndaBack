@@ -79,7 +79,9 @@ class LikeSerializer(serializers.ModelSerializer):
         model = Like
         fields = ["id", "user", "post", "created_at"]
         read_only_fields = ("user", "created_at")
-            request = self.context.get("request")
-            return (
-                request and request.user.is_authenticated and obj.user == request.user
-            )
+
+    def get_is_mine(self, obj):
+         request = self.context.get("request")
+         return (
+         request and request.user.is_authenticated and obj.user == request.user
+         )
