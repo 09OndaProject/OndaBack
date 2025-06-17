@@ -9,7 +9,7 @@ from apps.options.models.area import Area
 from apps.options.serializers.area import AreaSerializer, AreaSimpleSerializer
 
 
-@method_decorator(cache_page(60 * 60), name="dispatch")
+@method_decorator(cache_page(60 * 60, key_prefix="area_list"), name="dispatch")
 class AreaListView(APIView):
 
     @swagger_auto_schema(
@@ -36,7 +36,9 @@ class AreaListView(APIView):
         depth = request.query_params.get("depth")
         parent_id = request.query_params.get("parent_id")
 
-        queryset = Area.objects.all()
+        queryset = (
+            Area.objects.all().select_related("parent").prefetch_related("children")
+        )
 
         if parent_id:
             queryset = queryset.filter(parent_id=parent_id).order_by("id")
