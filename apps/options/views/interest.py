@@ -7,7 +7,7 @@ from apps.options.models.interest import Interest
 from apps.options.serializers.interest import InterestSerializer
 
 
-@method_decorator(cache_page(60 * 60), name="dispatch")
+@method_decorator(cache_page(60 * 60, key_prefix="interest_list"), name="dispatch")
 class InterestListView(generics.ListAPIView):
     queryset = Interest.objects.all()
     serializer_class = InterestSerializer
