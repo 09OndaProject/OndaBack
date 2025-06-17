@@ -4,14 +4,17 @@ from django.conf import settings
 from apps.user.models import Provider
 
 
+CALLBACK_URL = "/users/kakao/callback"
+CALLBACK_URL_TEST = "/api/users/kakao/callback-test"
+
 # 카카오
 class KaKaoProviderInfoMixin:
     def get_provider_info(self):
         return {
             "name": "카카오",
             "provider": Provider.KAKAO,
-            "callback_url": "/users/kakao/callback",
-            "callback_url_test": "/api/users/kakao/callback-test",
+            "callback_url": CALLBACK_URL,
+            "callback_url_test": CALLBACK_URL_TEST,
             "token_url": "https://kauth.kakao.com/oauth/token",
             "profile_url": "https://kapi.kakao.com/v2/user/me",
             "login_url": "https://kauth.kakao.com/oauth/authorize",
@@ -32,8 +35,8 @@ class GoogleProviderInfoMixin:
         return {
             "name": "구글",
             "provider": Provider.GOOGLE,
-            "callback_url": "/users/google/callback",
-            "callback_url_test": "/api/users/google/callback-test",
+            "callback_url": CALLBACK_URL,
+            "callback_url_test": CALLBACK_URL_TEST,
             "token_url": "https://oauth2.googleapis.com/token",
             "profile_url": "https://www.googleapis.com/oauth2/v1/userinfo",
             "login_url": "https://accounts.google.com/o/oauth2/v2/auth",
@@ -54,8 +57,8 @@ class NaverProviderInfoMixin:
         return {
             "name": "네이버",
             "provider": Provider.NAVER,
-            "callback_url": "/users/naver/callback",
-            "callback_url_test": "/api/users/naver/callback-test",
+            "callback_url": CALLBACK_URL,
+            "callback_url_test": CALLBACK_URL_TEST,
             "token_url": "https://nid.naver.com/oauth2.0/token",
             "profile_url": "https://openapi.naver.com/v1/nid/me",
             "login_url": "https://nid.naver.com/oauth2.0/authorize",

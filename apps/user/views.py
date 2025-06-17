@@ -291,6 +291,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 secure=True,  # HTTPS 환경에서만 전송
                 # secure=False,  # 로컬 개발 환경에 맞춰서 설정
                 samesite="Lax",  # CSRF 공격 방지 설정
+                # samesite="None",  # 다른 도메인 간에도 쿠키 전송 허용
                 path="/api/users/token",  # 필요한 경로에만 쿠키 사용
                 max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)
             )
