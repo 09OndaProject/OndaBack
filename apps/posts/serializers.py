@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Post, PostImage, Comment, Like
+
+from .models import Comment, Like, Post, PostImage
 
 
 class PostImageSerializer(serializers.ModelSerializer):

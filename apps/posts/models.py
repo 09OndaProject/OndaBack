@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.db import models
-from apps.options.models.category import Category
-from apps.options.models.area import Area
-from apps.options.models.interest import Interest
 
+from apps.options.models.area import Area
+from apps.options.models.category import Category
+from apps.options.models.interest import Interest
 
 
 class Post(models.Model):
