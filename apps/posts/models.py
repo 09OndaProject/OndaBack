@@ -15,7 +15,9 @@ class Post(models.Model):
     interest = models.ForeignKey(
         Interest, null=True, blank=True, on_delete=models.SET_NULL
     )
-    file = models.ForeignKey("File", null=True, blank=True, on_delete=models.SET_NULL)
+    file = models.ForeignKey(
+        "upload.File", null=True, blank=True, on_delete=models.SET_NULL
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -25,15 +27,7 @@ class Post(models.Model):
 
 class PostImage(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="images")
-    file = models.ForeignKey("File", on_delete=models.CASCADE)
-
-
-class File(models.Model):
-    file = models.FileField(upload_to="uploads/")  # 실파일경로
-    file_type = models.CharField(max_length=10)
-    file_name = models.CharField(max_length=255)
-    file_size = models.IntegerField()
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    file = models.ForeignKey("upload.File", on_delete=models.CASCADE)
 
 
 class Comment(models.Model):
