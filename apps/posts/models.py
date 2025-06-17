@@ -12,7 +12,9 @@ class Post(models.Model):
     content = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL)
-    interest = models.ForeignKey(Interest, null=True, blank=True, on_delete=models.SET_NULL)
+    interest = models.ForeignKey(
+        Interest, null=True, blank=True, on_delete=models.SET_NULL
+    )
     file = models.ForeignKey("File", null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,11 +37,11 @@ class File(models.Model):
 
 
 class Comment(models.Model):
-    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='comments')
+    post = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="comments")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()
     parent = models.ForeignKey(
-        'self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies'
+        "self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -51,7 +53,7 @@ class Comment(models.Model):
 
 class Like(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="likes")
+    post = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="likes")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

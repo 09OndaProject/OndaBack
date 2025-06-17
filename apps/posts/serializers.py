@@ -35,8 +35,10 @@ class PostSerializer(serializers.ModelSerializer):
 
         def get_is_mine(self, obj):
             # context에 request가 있어야 함 (APIView에서 serializer에 전달됨)
-            request = self.context.get('request')
-            return request and request.user.is_authenticated and obj.user == request.user
+            request = self.context.get("request")
+            return (
+                request and request.user.is_authenticated and obj.user == request.user
+            )
 
         def get_is_liked(self, obj):
             request = self.context.get("request")
@@ -47,9 +49,11 @@ class PostSerializer(serializers.ModelSerializer):
 
 class RecursiveField(serializers.Serializer):
     """대댓글 구조(트리) 직렬화용"""
+
     def to_representation(self, value):
         serializer = self.parent.parent.__class__(value, context=self.context)
         return serializer.data
+
 
 class CommentSerializer(serializers.ModelSerializer):
     nickname = serializers.CharField(source="user.nickname", read_only=True)
@@ -59,11 +63,25 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = [
-            "id", "post", "user", "nickname",
-            "content", "parent", "created_at", "updated_at",
-            "is_mine", "replies"
+            "id",
+            "post",
+            "user",
+            "nickname",
+            "content",
+            "parent",
+            "created_at",
+            "updated_at",
+            "is_mine",
+            "replies",
         ]
-        read_only_fields = ("user", "nickname", "created_at", "updated_at", "is_mine", "replies")
+        read_only_fields = (
+            "user",
+            "nickname",
+            "created_at",
+            "updated_at",
+            "is_mine",
+            "replies",
+        )
 
     def get_is_mine(self, obj):
         request = self.context.get("request")
@@ -74,6 +92,7 @@ class CommentSerializer(serializers.ModelSerializer):
         user = request.user if request else None
         return Comment.objects.create(user=user, **validated_data)
 
+
 class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
@@ -81,7 +100,5 @@ class LikeSerializer(serializers.ModelSerializer):
         read_only_fields = ("user", "created_at")
 
     def get_is_mine(self, obj):
-         request = self.context.get("request")
-         return (
-         request and request.user.is_authenticated and obj.user == request.user
-         )
+        request = self.context.get("request")
+        return request and request.user.is_authenticated and obj.user == request.user

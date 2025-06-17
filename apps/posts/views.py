@@ -29,18 +29,24 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             raise PermissionDenied("권한이 없습니다.")
         serializer.save()
 
+
 class CommentListCreateView(generics.ListCreateAPIView):
-    queryset = Comment.objects.filter(parent=None).order_by("-created_at")  # 최상위 댓글만
+    queryset = Comment.objects.filter(parent=None).order_by(
+        "-created_at"
+    )  # 최상위 댓글만
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         # 특정 게시글(post_id)에 대한 댓글만
         post_id = self.kwargs["post_id"]
-        return Comment.objects.filter(post_id=post_id, parent=None).order_by("-created_at")
+        return Comment.objects.filter(post_id=post_id, parent=None).order_by(
+            "-created_at"
+        )
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user, post_id=self.kwargs["post_id"])
+
 
 class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Comment.objects.all()
@@ -56,6 +62,7 @@ class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.user != instance.user:
             raise PermissionDenied("본인 댓글만 삭제할 수 있습니다.")
         instance.delete()
+
 
 class LikeToggleView(APIView):
     permission_classes = [permissions.IsAuthenticated]
