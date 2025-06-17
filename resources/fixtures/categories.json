@@ -1,16 +1,16 @@
 [
   {
-    "model": "options.category",
-    "pk": 1,
-    "fields": {
-      "name": "정보"
-    }
-  },
+  "model": "options.category",
+  "pk": 1,
+  "fields": {
+    "category_name": "정보"
+  }
+},
   {
     "model": "options.category",
     "pk": 2,
     "fields": {
-      "name": "소통"
+      "category_name": "소통"
     }
   }
 ]

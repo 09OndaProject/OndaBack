@@ -4,10 +4,12 @@ from urllib.parse import urlencode
 import requests
 from django.contrib.auth import get_user_model
 from django.core import signing
+from django.core.signing import BadSignature
 from django.middleware.csrf import get_token
 from django.shortcuts import redirect, render
 from django.views.generic import RedirectView
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -16,7 +18,8 @@ from apps.user.models import Provider
 from apps.user.oauth_mixins import (
     KaKaoProviderInfoMixin,
 )
-from utils.random_nickname import generate_unique_numbered_nickname
+from apps.user.utils.jwt_token import get_tokens_for_user
+from apps.user.utils.random_nickname import generate_unique_numbered_nickname
 
 User = get_user_model()
 
@@ -29,7 +32,7 @@ def get_social_login_params(provider_info, callback_url):
         "redirect_uri": callback_url,
         "state": state,
     }
-    if provider_info["name"] == "구글":
+    if provider_info["provider"] == Provider.GOOGLE:  # 구글
         params.update(
             {
                 "scope": "openid email profile",
@@ -85,13 +88,19 @@ class OAuthCallbackView(APIView, ABC):
                 f"{self.get_frontend_fail_url()}?error=코드 또는 스테이트가 없습니다."
             )
 
+        # state 검증 (시간 제한 없이)
+        try:
+            state = signing.loads(state)
+        except BadSignature:
+            raise ValidationError(
+                {"detail": "state 값이 위조되었거나 올바르지 않습니다."}
+            )
+
         # 소셜로그인에 필요한 redirect_uri, client_id, grant_type 등의 provider_info 를 가져옴
         provider_info = self.get_provider_info()
 
-        # state 검증 로직 필요 시 추가 (ex. signing.loads)
-
         # 엑세스 토큰 요청
-        token_response = self.get_access_token(code, state, provider_info)
+        token_response = self.get_access_token(code, provider_info)
         if token_response.status_code != 200:
             return redirect(
                 f"{self.get_frontend_fail_url()}?error=토큰을 가져올 수 없습니다."
@@ -130,8 +139,8 @@ class OAuthCallbackView(APIView, ABC):
             user.save()
 
         # JWT 토큰 발급
-        refresh_token = RefreshToken.for_user(user)
-        access_token = str(refresh_token.access_token)
+        refresh_token, access_token = get_tokens_for_user(user)
+
         # 커스텀 CSRF 토큰 발급
         csrf_token = get_token(request=request)
 
@@ -142,7 +151,7 @@ class OAuthCallbackView(APIView, ABC):
         # 쿠키 추가
         redirect_response.set_cookie(
             key="refresh_token",
-            value=str(refresh_token),
+            value=refresh_token,
             httponly=True,
             secure=True,  # HTTPS 환경에서만 전송
             # secure=False,  # 로컬 개발 환경에 맞춰서 설정
@@ -154,18 +163,17 @@ class OAuthCallbackView(APIView, ABC):
         return redirect_response
 
     # 엑세스 토큰 가져오는 메서드
-    def get_access_token(self, code, state, provider_info):
+    def get_access_token(self, code, provider_info):
         """
         requests 라이브러리를 활용하여 Oauth2 API 플랫폼에 액세스 토큰을 요청하는 함수
         """
-        if provider_info["name"] == "구글":
+        if provider_info["provider"] == Provider.GOOGLE:  # 구글
             return requests.post(
                 provider_info["token_url"],
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "state": state,
                     "redirect_uri": build_callback_url(provider_info, self.request),
                     "client_id": provider_info["client_id"],
                     "client_secret": provider_info["client_secret"],
@@ -177,7 +185,6 @@ class OAuthCallbackView(APIView, ABC):
                 params={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "state": state,
                     "client_id": provider_info["client_id"],
                     "client_secret": provider_info["client_secret"],
                 },
@@ -203,20 +210,20 @@ class OAuthCallbackView(APIView, ABC):
         """
         # 각 provider의 프로필 데이터 처리 로직
 
-        if provider_info["name"] == "구글":
+        if provider_info["provider"] == Provider.GOOGLE:  # 구글
             email = profile_data.get(provider_info["email_field"])
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
             return email, name, nickname
 
-        elif provider_info["name"] == "네이버":
+        elif provider_info["provider"] == Provider.NAVER:  # 네이버
             profile_data = profile_data.get("response", {})
             email = profile_data.get(provider_info["email_field"])
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
             return email, name, nickname
 
-        elif provider_info["name"] == "카카오":
+        elif provider_info["provider"] == Provider.KAKAO:  # 카카오
             account_data = profile_data.get("kakao_account", {})
             email = account_data.get(provider_info["email_field"])
             profile_data = account_data.get("profile", {})
@@ -226,7 +233,7 @@ class OAuthCallbackView(APIView, ABC):
 
     # 성공 프론트 리다이렉트 url
     def get_frontend_success_url(self):
-        return f"{self.get_provider_info()['frontend_redirect_url_test']}"
+        return "/api/users/oauth/callback-test"
 
     # 실패 프론트 리다이렉트 url
     def get_frontend_fail_url(self):

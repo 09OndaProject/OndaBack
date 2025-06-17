@@ -6,4 +6,4 @@ from apps.options.models.interest import Interest
 class InterestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Interest
-        fields = ["id", "name"]
+        fields = ["id", "interest_name"]

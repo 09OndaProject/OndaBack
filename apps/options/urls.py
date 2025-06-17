@@ -8,12 +8,14 @@ from apps.options.views.interest import InterestListView
 from apps.options.views.option_all import OptionAllView
 
 urlpatterns = [
-    path("", OptionAllView.as_view(), name="option-all"),
-    path("areas", AreaListView.as_view(), name="option-areas"),
-    path("interests", InterestListView.as_view(), name="option-interests"),
-    path("age-groups", AgeGroupListView.as_view(), name="option-age-groups"),
-    path("categories", CategoryListView.as_view(), name="option-categories"),
+    path("options", OptionAllView.as_view(), name="option-all"),
+    path("options/areas", AreaListView.as_view(), name="option-areas"),
+    path("options/interests", InterestListView.as_view(), name="option-interests"),
+    path("options/age-groups", AgeGroupListView.as_view(), name="option-age-groups"),
+    path("options/categories", CategoryListView.as_view(), name="option-categories"),
     path(
-        "digital-levels", DigitalLevelListView.as_view(), name="option-digital-levels"
+        "options/digital-levels",
+        DigitalLevelListView.as_view(),
+        name="option-digital-levels",
     ),
 ]
