@@ -80,6 +80,7 @@ class LeaderApplicationStatusUpdateView(generics.UpdateAPIView):
     serializer_class = LeaderApplicationStatusUpdateSerializer
     permission_classes = [permissions.IsAdminUser]
     queryset = LeaderApplication.objects.all()
+    http_method_names = ["patch"]
 
     @swagger_auto_schema(
         tags=["리더신청"],
@@ -97,3 +98,45 @@ class LeaderApplicationStatusUpdateView(generics.UpdateAPIView):
             user.role = 2  # leader
             user.save()
         return response
+
+
+# 신청서 삭제 (본인만 가능하게)
+class LeaderApplicationDeleteView(generics.DestroyAPIView):
+    serializer_class = None
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = LeaderApplication.objects.all()
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return LeaderApplication.objects.none()
+
+        # 로그인 사용자 본인의 신청서만 삭제 허용
+        return self.queryset.filter(user=self.request.user)
+
+    @swagger_auto_schema(
+        tags=["리더신청"],
+        operation_summary="리더 신청 삭제 (본인)",
+        operation_description="본안이 제출한 리더 신청서를 삭제합니다.",
+        responses={204: "삭제 성공", 403: "권한 없음", 404: "존재하지 않음"},
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+# 본인 리더 신청서 상세 조회
+class MyLeaderApplicationDetailView(generics.RetrieveAPIView):
+    serializer_class = LeaderApplicationDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        # 로그인한 유저의 신청서 반환
+        return LeaderApplication.objects.get(user=self.request.user)
+
+    @swagger_auto_schema(
+        tags=["리더신청"],
+        operation_summary="본인 리더 신청 상세 조회",
+        operation_description="로그인한 사용자의 리더 신청서를 조회합니다.",
+        responses={200: LeaderApplicationDetailSerializer},
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)

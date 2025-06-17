@@ -31,8 +31,6 @@ class LeaderApplication(models.Model):
     )
 
     bio = models.TextField(verbose_name="자기소개")
-
-    # 다중 선택 가능 (JSON으로 저장)
     certificate_type = models.JSONField(verbose_name="자격증 종류")
 
     # 반복 가능한 활동 사례 (별도 테이블로 구성)
@@ -50,6 +48,8 @@ class LeaderApplication(models.Model):
     rejected_at = models.DateTimeField(null=True, blank=True, verbose_name="거절일시")
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="신청일시")
+
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="처리일시")
 
     def __str__(self):
         return f"{self.user.nickname or self.user.email}의 리더 신청서"

@@ -1,5 +1,6 @@
-from chat.models import GroupChatRoom
 from rest_framework import serializers
+
+from apps.chat.models import GroupChatRoom
 
 
 class GroupChatRoomSerializer(serializers.ModelSerializer):
