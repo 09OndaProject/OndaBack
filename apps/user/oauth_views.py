@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from urllib.parse import unquote, urlencode
+from urllib.parse import unquote, urlencode, urljoin
 
 import requests
 from django.conf import settings
@@ -22,6 +22,7 @@ from apps.user.oauth_mixins import (
 )
 from apps.user.utils.jwt_token import get_tokens_for_user
 from apps.user.utils.random_nickname import generate_unique_numbered_nickname
+from config.settings import FRONTEND_URL
 
 User = get_user_model()
 
@@ -62,9 +63,12 @@ class OauthLoginRedirectView(APIView, ABC):
     )
     def get(self, request, *args, **kwargs):
         provider_info = self.get_provider_info()
-        callback_url = (
-            request.META.get("HTTP_ORIGIN", settings.FRONTEND_URL)
-            + provider_info["callback_url"]
+        callback_url = request.query_params.get(
+            "callback_url",
+            urljoin(
+                request.META.get("HTTP_ORIGIN", FRONTEND_URL),
+                provider_info["callback_url"],
+            ),
         )
         params = get_social_login_params(provider_info, callback_url)
         login_url = f"{provider_info['login_url']}?{urlencode(params)}"
@@ -113,7 +117,13 @@ class OAuthCallbackView(APIView, ABC):
 
         # 소셜로그인에 필요한 redirect_uri, client_id, grant_type 등의 provider_info 를 가져옴
         provider_info = self.get_provider_info()
-        provider_info["host"] = request.META.get("HTTP_ORIGIN", settings.FRONTEND_URL)
+        provider_info["callback_url"] = request.query_params.get(
+            "callback_url",
+            urljoin(
+                request.META.get("HTTP_ORIGIN", FRONTEND_URL),
+                provider_info["callback_url"],
+            ),
+        )
 
         # 엑세스 토큰 요청
         token_response = self.get_access_token(code, provider_info)
@@ -186,8 +196,7 @@ class OAuthCallbackView(APIView, ABC):
                 data={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "redirect_uri": provider_info["host"]
-                    + provider_info["callback_url"],
+                    "redirect_uri": provider_info["callback_url"],
                     "client_id": provider_info["client_id"],
                     "client_secret": provider_info["client_secret"],
                 },
