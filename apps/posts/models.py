@@ -1,28 +1,9 @@
 from django.conf import settings
 from django.db import models
+from apps.options.models.category import Category
+from apps.options.models.area import Area
+from apps.options.models.interest import Interest
 
-
-class Category(models.Model):
-    name = models.CharField(max_length=50)
-
-    def __str__(self):
-        return self.name
-
-
-class Area(models.Model):
-    name = models.CharField(max_length=50)
-    parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL)
-    depth = models.CharField(max_length=50)
-
-    def __str__(self):
-        return self.name
-
-
-class Interest(models.Model):
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
 
 
 class Post(models.Model):
@@ -31,9 +12,7 @@ class Post(models.Model):
     content = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL)
-    interest = models.ForeignKey(
-        Interest, null=True, blank=True, on_delete=models.SET_NULL
-    )
+    interest = models.ForeignKey(Interest, null=True, blank=True, on_delete=models.SET_NULL)
     file = models.ForeignKey("File", null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
