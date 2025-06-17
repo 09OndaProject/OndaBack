@@ -1,14 +1,22 @@
 from enum import IntEnum
 
-from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+from django.utils import timezone
 
 from apps.options.models import Area, DigitalLevel, Interest
-
-# from apps.upload.models import File
+from apps.upload.models import File
 from utils.models import TimestampModel
+
+
+class UserInterest(models.Model):
+    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
+    interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "user_interest"
+        verbose_name = "유저 관심사"
+        verbose_name_plural = f"{verbose_name} 목록"
 
 
 # 사용자 지정 메니져
@@ -59,15 +67,35 @@ class UserManager(BaseUserManager):
 # SHA-256은 암호학에서 사용하는 해시 함수(haash function) 중 하나예요. 주로 데이터 무결성 확인, 비밀번호 저장, 디지털 서명, 블록체인 같은 곳에 쓰임.
 
 
+class UserInterest(models.Model):
+    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
+    interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "user_interest"
+        verbose_name = "유저 관심사"
+        verbose_name_plural = f"{verbose_name} 목록"
+
+
 class UserRole(IntEnum):
     ADMIN = 0  # 관리자  name:ADMIN  value:0
     USER = 1  # 유저  name:USER  value:1
     LEADER = 2  # 리더  name:LEADER  value:2
 
+    @classmethod
+    def choices(cls):
+        return [(user_role.value, user_role.name.lower()) for user_role in cls]
+
 
 class Provider(IntEnum):
-    HOME = 0  #   name:HOME  value:0
+    HOME = 0  # 일반  name:HOME  value:0
     KAKAO = 1  # 카카오  name:KAKAO  value:1
+    NAVER = 2  # 네이버  name:NAVER  value:2
+    GOOGLE = 3  # 구글  name:GOOGLE  value:3
+
+    @classmethod
+    def choices(cls):
+        return [(provider.value, provider.name.lower()) for provider in cls]
 
 
 class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아서 사용
@@ -80,45 +108,69 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
     )
     phone_number = models.CharField(max_length=11, blank=True, null=True)
     date_of_birth = models.DateField(verbose_name="생년월일", blank=True, null=True)
-    # profile_images = GenericRelation(File, related_query_name="profile_image")
-    # age_group = models.ForeignKey(Age_group, verbose_name="나이대", on_delete=models.PROTECT)
-    # area = models.ForeignKey(Area, verbose_name="지역", on_delete=models.PROTECT)
-    # interest = models.ForeignKey(Interest, verbose_name="관심사", on_delete=models.PROTECT)
-    # digital_level = models.ForeignKey(DigitalLevel, verbose_name="디지털 레벨", on_delete=models.PROTECT)
+    file = models.OneToOneField(
+        "upload.File", on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    # age_group = models.ForeignKey("options.Age_group", verbose_name="나이대", on_delete=models.SET_NULL)
+    area = models.ForeignKey(
+        "options.Area",
+        verbose_name="지역",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="+",
+    )
+    interests = models.ManyToManyField(
+        "options.Interest",
+        through="user.UserInterest",
+        related_name="users_with_interest",
+    )
+    digital_level = models.ForeignKey(
+        "options.DigitalLevel",
+        verbose_name="디지털 레벨",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="+",
+    )
     provider = models.PositiveSmallIntegerField(
-        verbose_name="제공자", default=Provider.HOME.value
+        verbose_name="제공자",
+        default=Provider.HOME.value,
+        choices=Provider.choices(),
     )
     role = models.PositiveSmallIntegerField(
-        verbose_name="권한", default=UserRole.USER.value
+        verbose_name="권한",
+        default=UserRole.USER.value,
+        choices=UserRole.choices(),
     )
-
     last_login = models.DateTimeField(
         verbose_name="마지막 로그인", blank=True, null=True
     )
-
     is_active = models.BooleanField(
         verbose_name="계정 활성화", default=False
     )  # 기본적으로 비활성화 시켜놓고 확인 절차를 거친 후 활성화
+    is_deleted = models.BooleanField(verbose_name="계정 삭제 여부", default=False)
+    deleted_at = models.DateTimeField(
+        verbose_name="계정 삭제 날짜",
+        null=True,
+    )
 
     # 사용자 지정 메니져
     # User.objects.all()   <- objects가 메니져
-    objects = UserManager()  # 메니져는 UserManager()
+    objects = UserManager()  # 메니져는 커스텀한 UserManager()
 
-    #
     USERNAME_FIELD = "email"  # 기본 유저네임(아이디)를 email로 지정
-    EMAIL_FIELD = "email"
-    REQUIRED_FIELDS = []
+    EMAIL_FIELD = "email"  # send_email() 같은 메서드가 user.email을 자동으로 사용, PasswordResetForm 등에서 유효한 이메일 필드를 찾아내는 데 사용됨
+    REQUIRED_FIELDS = []  # createsuperuser 명령어에서 추가로 입력을 요구할 필드 목록
 
     class Meta:
         db_table = "user"
         verbose_name = "유저"
         verbose_name_plural = f"{verbose_name} 목록"
 
-    def get_provider_display(self):
-        return Provider(self.provider).name.lower()
-
-    def get_role_display(self):
-        return UserRole(self.role).name.lower()
+    # choices 설정 시 자동 생성됨
+    # def get_provider_display(self):
+    #     return Provider(self.provider).name.lower()
+    # def get_role_display(self):
+    #     return UserRole(self.role).name.lower()
 
     def get_full_name(self):  # 사용자의 전체 이름(Full name)을 반환. 성과 이름을 합침
         # return f"{self.first_name} {self.last_name}"
@@ -149,6 +201,13 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         return self.is_superuser
 
     ############################################
+
+    def delete(self, using=None, keep_parents=False):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.email = f"{self.email}__deleted__{self.pk}"
+        self.nickname = f"{self.nickname}__deleted__{self.pk}"
+        self.save()
 
 
 # @property

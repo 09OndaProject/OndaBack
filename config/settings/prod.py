@@ -1,15 +1,19 @@
 import random
 
-from config.settings.base import ENV, STATIC_URL
+from config.settings.base import ENV
 
-# DEBUG = True
-DEBUG = False
+DEBUG = True
+# DEBUG = False
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    "43.203.181.6",
-    "wistar.n-e.kr",
+    "13.209.4.19",
+    "onda.n-e.kr",
+    "api.ondamoim.com",
 ]  # EC2 퍼블릭 IP
+
+# 소셜로그인에 사용할 url
+FRONTEND_URL = ENV.get("FRONTEND_URL")
 
 # 시크릿 키를 ENV 변수에 저장된 딕셔너리에서 가져옵니다. 만약 파일에서 읽어온 시크릿 키가 존재하지 않는다면 50자리의 무작위 문자열을 반환합니다.
 SECRET_KEY = ENV.get(
@@ -29,6 +33,10 @@ DATABASES = {
 }
 
 # S3 사용시 설정
+# (STORAGES['staticfiles'] 설정이 존재하면,
+# Django는 STATIC_ROOT를 무시하고 대신 S3에 업로드.
+# default 저장할 때 경로
+# staticfiles는 collectstatic할 때 사용하는 경로
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
@@ -56,8 +64,8 @@ STORAGES = {
     },
 }
 
-# # custom_domain이 설정되어 있으면, 이 도메인을 사용해서 URL을 생성
-# # 그렇지 않으면 기본 Amazon S3 URL (s3.{region}.amazonaws.com/{bucket}/...)을 사용
+# custom_domain이 설정되어 있으면, 이 도메인을 사용해서 URL을 생성
+# 그렇지 않으면 기본 Amazon S3 URL (s3.{region}.amazonaws.com/{bucket}/...)을 사용
 
 # Static, Media URL 수정
 MEDIA_URL = f"https://{ENV.get('S3_STORAGE_BUCKET_NAME')}.s3.amazonaws.com/media/"
@@ -88,11 +96,5 @@ EMAIL_HOST_PASSWORD = ENV.get("EMAIL_HOST_PASSWORD", "")
 
 
 # OAuth
-NAVER_CLIENT_ID = ENV.get("NAVER_CLIENT_ID", "")
-NAVER_CLIENT_SECRET = ENV.get("NAVER_CLIENT_SECRET", "")
-
 KAKAO_REST_API_KEY = ENV.get("KAKAO_REST_API_KEY", "")
 KAKAO_CLIENT_SECRET = ENV.get("KAKAO_CLIENT_SECRET", "")
-
-GOOGLE_CLIENT_ID = ENV.get("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = ENV.get("GOOGLE_CLIENT_SECRET", "")

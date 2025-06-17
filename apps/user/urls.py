@@ -13,7 +13,6 @@ from .views import (
     PasswordCheckView,
     ProfileView,
     RegisterView,
-    UserListView,
     VerifyEmailView,
 )
 
@@ -29,7 +28,6 @@ urlpatterns = [
     path(
         prefix + "/check/password", PasswordCheckView.as_view(), name="password_check"
     ),
-    path("admin/" + prefix, UserListView.as_view(), name="user_list"),
     # 프로필
     path(prefix + "/profile", ProfileView.as_view(), name="profile"),
     # JWT 로그인, 로그아웃, 리프레시

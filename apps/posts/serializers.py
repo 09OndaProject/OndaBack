@@ -12,6 +12,7 @@ class PostSerializer(serializers.ModelSerializer):
     nickname = serializers.CharField(source="user.nickname", read_only=True)
     like_count = serializers.IntegerField(source="likes.count", read_only=True)
     is_liked = serializers.SerializerMethodField()
+    is_mine = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Post
@@ -77,3 +78,7 @@ class LikeSerializer(serializers.ModelSerializer):
         model = Like
         fields = ["id", "user", "post", "created_at"]
         read_only_fields = ("user", "created_at")
+            request = self.context.get("request")
+            return (
+                request and request.user.is_authenticated and obj.user == request.user
+            )

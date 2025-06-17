@@ -78,7 +78,7 @@ poetry env activate
 poetry install
 
 배포용 패키지만 설치 (dev 제외)
-poetry install --no-dev
+poetry install --without dev --no-root
 안될시
 poetry install --no-root
 
@@ -599,6 +599,13 @@ final_response.set_cookie(
 )
 return final_response
 
+------------------------------
+cors 설정
+------------------------------
+
+django-cors-headers 설치
+poetry add django-cors-headers
+
 settings.py 설정
 INSTALLED_APPS += ['corsheaders']
 
@@ -609,12 +616,32 @@ MIDDLEWARE = [
 
 # 프론트 도메인 등록
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
     "http://localhost:5173",
+    "https://onda-develop-868p.vercel.app/",
+    "https://www.ondamoim.com",
 ]
 
+# 모든 출처에서의 요청 허용
+# CORS_ALLOW_ALL_ORIGINS = True
+
 # 쿠키 포함 허용
+# 쿠키, 인증 헤더 등을 포함한 CORS 요청 허용
+# 기본값 False
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = ['GET','POST','PUT','PATCH','DELETE','OPTIONS']
+
+# 기본값 (설정안해도 됨)
+# default_headers에 포함
+# CORS_ALLOW_HEADERS = [
+#     "accept",
+#     "authorization",
+#     "content-type",
+#     "user-agent",
+#     "x-csrftoken",
+#     "x-requested-with",
+# ]
+# default_methods에 포함
+# CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 --------------------
 이메일 보내는 기능 문제
@@ -926,7 +953,8 @@ class CustomCSRFMiddleware:
 -----------------------------
 Ubuntu 서버에서 CI/CD 사용해 배포 설정하기
 -----------------------------
-ssh -i ~/Downloads/wistar.pem ubuntu@43.203.181.6
+ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.4.19
+chmod 400 ~/Downloads/onda-key-aws.pem
 
 mv ~/Downloads/wistar.pem ~/.ssh
 # 만약 ~/.ssh 경로가없다면 .ssh 폴더를 생성해줘야합니다.
@@ -938,10 +966,10 @@ mkdir ~/.ssh
 cd ~/.ssh
 ls -l
 
-chmod 400 wistar.pem   # 읽기 모드 설정 추천 600은 읽기/쓰기
+chmod 400 onda-key-aws.pem   # 읽기 모드 설정 추천 600은 읽기/쓰기
 ls -l
 
-ssh -i ~/.ssh/wistar.pem ubuntu@43.203.181.6
+ssh -i ~/.ssh/onda-key-aws.pem ubuntu@43.203.181.6
 
 Pyenv 설치 및 설정
 sudo apt-get update --fix-missing
@@ -982,6 +1010,14 @@ Ubuntu 사용자 계정의 Bash 셸 설정 파일을 편집
 # vi 에디터로 .bashrc 편집하기
 sudo vi ~/.bashrc
 
+# .bashrc 수정하기
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
 # 터미널 재실행
 source ~/.bashrc
 
@@ -1011,34 +1047,32 @@ ssh-add -k ~/.ssh/id_rsa
 아래의 명령어를 입력하여 id_rsa.pub 파일을 열어 이메일 앞쪽의 키값만 복사합니다.
 sudo vi ~/.ssh/id_rsa.pub
 
+이후에 깃허브 계정 설정에서 SSH key를 추가합니다.
+
 아래의 명령어를 입력하여 작성한 코드를 클론 받습니다.
 git clone --branch develop --single-branch <레포지토리 주소>
-git clone --branch prod/test2 --single-branch https://github.com/09-MainProject/WiStarBack.git
+git clone --branch feature/user --single-branch https://github.com/09OndaProject/OndaBack.git
 
 프로젝트 경로로 이동
 cd <프로젝트 루트 디렉터리>
-cd WiStarBack
+cd OndaBack
 
 settings.py 심볼릭 링크를 생성합니다.
 ln -sf config/settings/prod.py config/settings/settings.py
 
 envs 폴더를 생성하고 하위에 .env.prod 파일을 생성합니다.
 mkdir envs
-cd envs
 
-# touch 명령어로 빈 파일 생성
-touch .env.prod
-
-# .env.prod를  vi 에디터로 편집합니다.
-vi .env.prod
+# .env를  vi 에디터로 편집 및 생성.
+vi envs/.env
 
 # pyenv 가상환경 생성
 pyenv virtualenv <python-version> 가상환경이름
-pyenv virtualenv 3.13.1 wistar
+pyenv virtualenv 3.13.1 onda
 
 # 가상환경 적용
 pyenv local 가상환경이름
-pyenv local wistar
+pyenv local onda
 pyenv local 3.13.1  #가상환경 생성 없이 버전 파이썬 버전 설정
 
 # 가상환경 적용 확인
@@ -1051,6 +1085,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 vi ~/.bashrc
 
 # 아래의 내용을 .bashrc에 추가해줍니다.
+# poetry
 export PATH="/home/ubuntu/.local/bin:$PATH"
 
 # 터미널 재실행
@@ -1067,13 +1102,6 @@ poetry env activate
 ### Gunicorn 설정하기
 아래의 가이드를 따라 Gunicorn 설정을 추가합니다.
 
-# Gunicorn 가상환경 설정
-pyenv virtualenv <python version> gunicorn
-pyenv virtualenv 3.13.1 gunicorn
-
-# 현재 쉘에 gunicorn 가상환경 지정
-pyenv shell gunicorn
-
 # 가상환경에 gunicorn 설치
 pip install gunicorn
 
@@ -1085,6 +1113,7 @@ poetry install --no-root
 sudo vi /etc/systemd/system/gunicorn.service
 
 # 아래의 내용을 추가후 :wq
+# pyenv로 가상환경 사용시 설정
 [Unit]
 Description=gunicorn daemon
 After=network.target
@@ -1093,19 +1122,19 @@ After=network.target
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/프로젝트 루트 디렉터리
-ExecStart=/home/ubuntu/.pyenv/versions/gunicorn/bin/gunicorn \
+ExecStart=/home/ubuntu/.pyenv/versions/가상환경이름/bin/gunicorn \
         --access-logfile /var/log/gunicorn/access.log \
         --error-logfile /var/log/gunicorn/error.log \
         --log-level info \
         --workers 3 \
         --bind unix:/srv/gunicorn/gunicorn.sock config.wsgi:application
-Environment="DJANGO_SETTINGS_MODULE=config.settings.settings"
+Environment="DJANGO_SETTINGS_MODULE=config.settings"
 [Install]
 WantedBy=multi-user.target
 
 여기서 가상환경을
-pyenv virtualenv 3.13.1 wistar 이렇게 만들어서 사용했으면
-/home/ubuntu/.pyenv/versions/wistar/bin/gunicorn
+pyenv virtualenv 3.13.1 onda 이렇게 만들어서 사용했으면
+/home/ubuntu/.pyenv/versions/onda/bin/gunicorn
 이렇게 이 부분만 바꾸면 된다.
 
 # 시스템설정 daemon-reload
@@ -1157,6 +1186,7 @@ cd /etc/nginx/sites-available
 sudo rm default
 # 새로운 설정파일 추가
 sudo vi django.conf
+sudo vi /etc/nginx/sites-available/django.conf
 
 # 아래의 내용을 입력 후 :wq
 server {
@@ -1188,7 +1218,7 @@ sudo vi /etc/nginx/nginx.conf
 # 상단의 'user www-data'를 'user ubuntu'로 변경 후 :wq
 
 # syetemctl 을 사용하여 nginx 서비스 시작
-sudo systemctl restart nginx.service
+sudo systemctl reload nginx.service
 
 # syetemctl 을 사용하여 nginx 서비스 상태확인
 sudo systemctl status nginx.service
@@ -1213,7 +1243,9 @@ certbot 설치
 sudo apt-get install certbot python3-certbot-nginx
 
 nginx에 ssl 인증서를 적용
-sudo certbot --nginx -d example.com
+sudo certbot --nginx -d 도메인
+
+이메일 입력
 
 첫번째 질문은 서비스 사용 약관에 대한 pdf 파일 생성여부를 물어보는 것이고,
 두번째 질문은 도메인 인증에 성공하면 해당 이슈를 이메일로 공유하고
@@ -1227,6 +1259,38 @@ Let's Encrypt 인증서는 90일 동안만 유효합니다.
 certbot은 자동 갱신을 위한 설정이 기본적으로 되어 있지만,
 아래 커맨드로 갱신이 잘 작동하는지 확인
 sudo certbot renew --dry-run
+
+이후 nginx 설정
+sudo vi /etc/nginx/sites-available/django.conf
+
+server {
+    listen 80;
+    server_name onda.n-e.kr;
+
+     location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+server {
+        listen 443 ssl;
+        server_name onda.n-e.kr;
+
+        ssl_certificate /etc/letsencrypt/live/onda.n-e.kr/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/onda.n-e.kr/privkey.pem;
+
+        location / {
+                include proxy_params;
+                proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+        }
+
+        location /.well-known/acme-challenge/ {
+                root /var/www/certbot;
+        }
+}
 
 ------------------------------------------
 아마존 리눅스 서버에서 도커 사용해 배포 설정하기
@@ -1312,7 +1376,6 @@ python3 manage.py migrate
 python3 manage.py createsuperuser
 
 
-
 컨테이너 정지 및 제거
 sudo docker-compose -f docker-compose-prod.yml down
 
@@ -1375,23 +1438,6 @@ sudo systemctl reload nginx
 scp -i ~/Downloads/your-key.pem -r .static_root/ ec2-user@3.39.10.22:/home/ec2-user/WiStarBack/
 scp -i ~/Downloads/wistar.pem -r .static_root/ ec2-user@3.39.10.22:/home/ec2-user/WiStarBack/
 
-server {
-    listen 80;
-    server_name _;
-
-    location /static/ {
-        alias /home/ec2-user/WiStarBack/.static_root/;
-        access_log off;
-        expires max;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-
 에러 로그 확인
 sudo tail -n 100 /var/log/nginx/error.log
 
@@ -1406,14 +1452,12 @@ sudo systemctl reload nginx
 
 nginx 권한 설정
 sudo chmod +x /home
-sudo chmod +x /home/ec2-user
-sudo chmod +x /home/ec2-user/WiStarBack
-sudo chmod +x /home/ec2-user/WiStarBack/.static_root
-
+sudo chmod +x /home/ubuntu
+sudo chmod +x /home/ubuntu/OndaBack
+sudo chmod +x /home/ubuntu/OndaBack/.static_root
 
 http://3.39.10.22/redoc/
 http://3.39.10.22/swagger/
-
 
 커밋 로그 안남기고 최신 커밋에 합치는법
 git add .
@@ -1528,8 +1572,6 @@ git commit -m "PR #36 수동 병합 (마이그레이션 제외)"
 원격 브랜치에 적용
 git push
 
-
-
 도커 컨테이너 접속
 docker exec -it wistarback bash
 
@@ -1597,3 +1639,168 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 rds에 접속
 psql -h <RDS_ENDPOINT> -u <username> -p
 
+
+s3 버킷 정책 설정
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "*"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::본인 버킷 이름/*"
+        }
+    ]
+}
+
+이렇게 실행시 서버 실행 오류 확인 가능
+gunicorn config.wsgi:application
+
+# 개발 환경에서 사용하는 경로
+STATIC_URL = "static/"
+# 장고가 자동으로 정적파일을 서빙해주는 경로 (gunicorn실행시 적용안됨)
+STATIC_DIR = BASE_DIR / "static"
+STATICFILES_DIRS = [
+    STATIC_DIR,
+]
+
+# collectstatic하면 해당 경로로 정적 파일이 복사됨
+STATIC_ROOT = BASE_DIR / ".static_root"
+
+gunicorn을 사용한 배포시 django가 자동으로 정적 파일을 서빙하지 않기 때문에
+collectstatic해서 정적 파일을 복사한 후 nginx를 통해서 서빙
+
+nginx 설정 시
+include proxy_params;
+이렇게 설정하면 아래 내용 포함
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+/etc/nginx/ 경로에 위 내용을 포함한 proxy_params 파일이 존재
+/etc/nginx/proxy_params
+
+각 헤더의 역할
+Host : 클라이언트가 요청한 원래 호스트 이름 유지
+X-Real-IP : 클라이언트의 실제 IP 주소 전달
+X-Forwarded-For : 프록시를 거쳐온 클라이언트 IP 리스트 전달
+X-Forwarded-Proto : 요청의 원래 프로토콜(http 또는 https) 전달
+
+proxy_pass 설정
+1. proxy_pass http://127.0.0.1:8000;
+ - TCP 통신: Nginx가 Gunicorn에 **IP 주소 + 포트번호(8000)**로 요청을 보냅니다.
+ - 일반적이고 직관적이며 디버깅이 쉬움
+2. proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+Unix 도메인 소켓 통신: 로컬 파일 시스템 경로(/srv/gunicorn/gunicorn.sock)를 통해 Gunicorn과 통신합니다.
+ - 성능 우수 (TCP보다 CPU 오버헤드가 낮음)
+ - 보안 우수 (외부에서 직접 접근 불가)
+
+
+----------------------------------------------------------------------
+다른 곳에서 구매한 도메인(예: 가비아, 카페24, GoDaddy 등)을
+AWS Route 53에서 사용하고, AWS 서비스(예: EC2, S3, CloudFront 등)에 연결
+----------------------------------------------------------------------
+
+✅ 1. Route 53에 도메인 등록 (Hosted Zone 생성)
+ 1. AWS 콘솔 접속 → Route 53
+ 2. Hosted zones (호스팅 영역) 클릭
+ 3. Create hosted zone 클릭
+ 4. 입력:
+   - Domain name: 구매한 도메인 입력 (예: ondamoim.com)
+   - Type: Public hosted zone 선택
+ 5. 생성 완료 시, NS (Name Server) 레코드 4개가 자동 생성됨
+
+
+✅ 2. 도메인 등록업체에서 NS(Name Server) 변경
+ 1. 도메인을 구매한 사이트(가비아, GoDaddy 등) 접속
+ 2. DNS 관리 / 네임서버 변경 메뉴 찾기
+ 3. AWS Route 53에서 생성된 NS 레코드 4개를 복사해서 등록
+    예:
+    ns-1234.awsdns-12.org
+    ns-5678.awsdns-34.com
+    ...
+
+✅ 3. Route 53에 A레코드 또는 CNAME 레코드 추가
+원하는 AWS 리소스와 연결:
+  - EC2 인스턴스에 연결:
+    - A 레코드 생성 → EC2 퍼블릭 IP 입력
+  - S3 Static 웹 호스팅:
+    - A 레코드 or Alias 레코드 → S3 웹 호스팅 엔드포인트 선택
+  - CloudFront 연결:
+    - A 레코드 → CloudFront 배포 선택 (Alias)
+
+예시: EC2와 연결하려면
+ 1. A 레코드 추가:
+  - Name: www 또는 빈칸(ondamoim.com)
+  - Type: A
+  - Value: EC2 퍼블릭 IP 입력
+
+💡 참고:
+  - 도메인 등록업체에서 네임서버 변경이 적용되기까지 24~48시간 걸릴 수 있습니다.
+  - Route 53에서 TTL을 적절히 설정하면 캐싱을 제어할 수 있습니다.
+
+poetry install --without dev --no-root
+# CD 배포 설정
+# poetry로 설치된 패키지 requirements.txt 만들기
+poetry export --without-hashes --with prod -f requirements.txt -o requirements.txt
+
+poetry.lock 기반으로 설치할 모든 패키지를 requirements.txt 형식으로 내보내는(export) 명령어입니다.
+--without-hashes: 각 패키지에 대한 hash 정보를 생략 (pip 설치시 유연성 확보).
+-f requirements.txt: 출력 포맷을 pip에서 사용하는 requirements.txt 형식으로 지정.
+-o requirements.txt: 현재 디렉토리에 requirements.txt 파일로 저장.
+
+script: |
+  export PATH="$HOME/.pyenv/bin:$PATH"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+  cd /home/ubuntu/OndaBack
+  git pull origin main
+  pyenv shell onda
+  pip install --upgrade pip
+  pip install -r requirements.txt
+  sudo systemctl restart gunicorn
+
+export PATH=...
+pyenv 실행 파일이 있는 경로를 PATH에 추가해 pyenv 명령을 사용할 수 있게 설정
+
+eval "$(pyenv init -)"
+pyenv의 쉘 초기화 스크립트를 실행합니다.
+이 명령어가 있어야 pyenv 명령어와 관련된 내부 함수들이 정상 동작합니다.
+
+eval "$(pyenv virtualenv-init -)"
+pyenv-virtualenv 플러그인을 초기화합니다.
+이후 pyenv shell <env>와 같은 명령을 사용할 수 있게 됩니다.
+
+
+pip-tools
+pip 환경에서 패키지 버전 고정 및 의존성 관리를 더 체계적으로 할 수 있게 도와주는 Python CLI 도구 모음
+
+poetry add pip-tools
+pip-sync requirements.txt
+
+pip-sync는 requirements.txt에 명시된 것만 남기고, 나머지는 삭제
+
+
+개발용 패키지를 포함해 requirements.txt 생성
+poetry export --without-hashes --with dev -f requirements.txt -o requirements.txt
+
+pip-sync requirements.txt
+하면 깔끔하게 정리
+
+
+origin = request.META.get("HTTP_ORIGIN")        # https://frontend.ondamoim.com         CORS 요청 시 브라우저가 항상 포함
+referer = request.META.get("HTTP_REFERER")      # https://frontend.ondamoim.com/page    일부 브라우저/환경에선 누락되거나 변경됨
+host = request.META.get("HTTP_HOST")            # api.ondamoim.com                      백엔드 자신의 호스트 정보라서 클라이언트 출처와는 무관
+client_ip = request.META.get("REMOTE_ADDR")     # 192.168.x.x
+
+HTTP_ORIGIN, HTTP_REFERER는 브라우저가 자동으로 붙이는 값이지만,
+Postman, cURL 등에서는 임의 조작이 가능하므로 절대 보안 판단 근거로 사용하지 마세요.
+
+소셜로그인과 관련해서는 문제없음.
+브라우저 기반 요청은 대부분 보안이 철저하며,
+서버와 OAuth 플랫폼이 "허용된 출처"와 "리디렉션 경로"만 허용하므로 조작 가능성은 매우 낮음
+CORS, 소셜 로그인 설정 등에서 출처(origin)/redirect URI가 정확히 일치해야 동작하므로,
+조작해서 우회하는 건 사실상 불가능

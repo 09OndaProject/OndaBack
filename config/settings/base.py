@@ -38,7 +38,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 DJANGO_APPS = [
@@ -51,8 +50,9 @@ DJANGO_APPS = [
 ]
 
 OWN_APPS = [
+    "apps.chat",
     "apps.user",
-    # "apps.upload",
+    "apps.upload",
     "apps.options",
     "apps.reviews",
     "apps.leaders",
@@ -63,13 +63,17 @@ OWN_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",  # poetry add djangorestframework-simplejwt
-    "rest_framework_simplejwt.token_blacklist",
-    "drf_yasg",
+    "rest_framework_simplejwt.token_blacklist",  # 블랙리스트(로그아웃 구현에 사용)
+    "drf_yasg",  # swagger 문서 자동화
+    "storages",  # 외부 스토리지를 연동
+    "corsheaders",  # CORS 설정
+    "channels",  # 채팅 관련
 ]
 
 INSTALLED_APPS = DJANGO_APPS + OWN_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # CORS 설정
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -79,7 +83,43 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# 프론트 도메인 등록
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://onda-develop-868p.vercel.app",
+    "https://www.ondamoim.com",
+]
+# 쿠키 포함 허용
+CORS_ALLOW_CREDENTIALS = True
+
+# 기본값 (설정안해도 됨)
+# default_headers에 포함
+# CORS_ALLOW_HEADERS = [
+#     "accept",
+#     "authorization",
+#     "content-type",
+#     "user-agent",
+#     "x-csrftoken",
+#     "x-requested-with",
+# ]
+# default_methods에 포함
+# CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+
+
 ROOT_URLCONF = "config.urls"
+
+# Redis 설정
+ASGI_APPLICATION = "OndaBack.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 TEMPLATES = [
     {
@@ -102,6 +142,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -115,7 +156,10 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # 사용자 이름/이메일과 비슷한 비밀번호 거부
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # username, first_name, last_name, email과 비슷한 비밀번호 거부
+        "OPTIONS": {
+            "user_attributes": ("email", "name")  # 커스텀 유저 모델의 'name' 필드 포함
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",  # 기본 길이 8자
@@ -127,7 +171,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",  # 숫자만으로 구성된 비밀번호 거부
     },
     {
-        "NAME": "utils.custom_password_validation.NoKoreanPasswordValidator",  # 한글 입력 거부 커스텀
+        "NAME": "apps.user.utils.custom_password_validation.NoKoreanPasswordValidator",  # 한글 입력 거부 커스텀
     },
 ]
 
@@ -149,13 +193,13 @@ USE_TZ = True
 
 # 개발 환경에서 사용하는 경로
 STATIC_URL = "static/"
+# 장고가 자동으로 정적파일을 서빙해주는 경로 (gunicorn실행시 적용안됨)
 STATIC_DIR = BASE_DIR / "static"
-
 STATICFILES_DIRS = [
     STATIC_DIR,
 ]
 
-# 배포할 때 사용하는 경로
+# collectstatic하면 해당 경로로 정적 파일이 복사됨
 STATIC_ROOT = BASE_DIR / ".static_root"
 
 # Media
@@ -186,15 +230,9 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     # It will work instead of the default serializer(TokenObtainPairSerializer).
-    "TOKEN_OBTAIN_SERIALIZER": "utils.jwt_serializers.OndaTokenObtainPairSerializer",
+    "TOKEN_OBTAIN_SERIALIZER": "apps.user.utils.jwt_serializers.OndaTokenObtainPairSerializer",
     # ...
 }
-
-# 소셜로그인에 사용할 url
-# FRONTEND_URL = "https://wistar.o-r.kr"
-# FRONTEND_URL = "http://localhost:5173"
-# 백엔드에서 임시로 테스트
-FRONTEND_URL = "http://127.0.0.1:8000/api"
 
 # 자동 슬래시 붙이는 기능 끄기
 APPEND_SLASH = False

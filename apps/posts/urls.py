@@ -12,4 +12,6 @@ urlpatterns = [
 
     #좋아요
     path("<int:post_id>/like/", views.LikeToggleView.as_view()),  # POST
+    path("posts", views.PostListCreateView.as_view()),  # GET/POST
+    path("posts/<int:pk>", views.PostDetailView.as_view()),  # GET/PATCH/DELETE
 ]

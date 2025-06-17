@@ -1,6 +1,6 @@
 import random
 
-from config.settings.base import ENV, STATIC_URL
+from config.settings.base import ENV
 
 DEBUG = True
 ALLOWED_HOSTS = []
@@ -11,26 +11,27 @@ ALLOWED_HOSTS = []
 #     "localhost",
 # ]
 
+# 소셜로그인에 사용할 url (테스트용)
+FRONTEND_URL = "http://127.0.0.1:8000/api"
+
 # 시크릿 키를 ENV 변수에 저장된 딕셔너리에서 가져옵니다. 만약 파일에서 읽어온 시크릿 키가 존재하지 않는다면 50자리의 무작위 문자열을 반환합니다.
 SECRET_KEY = ENV.get(
     "DJANGO_SECRET_KEY",
     "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()?", k=50)),
 )
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "HOST": ENV.get("POSTGRES_HOST", ""),
-#         "USER": ENV.get("POSTGRES_USER", ""),
-#         "PASSWORD": ENV.get("POSTGRES_PASSWORD", ""),
-#         "NAME": ENV.get("POSTGRES_DB", ""),
-#         "PORT": ENV.get("POSTGRES_PORT", 5432),
-#     }
-# }
 
-# 파일 저장 기본 설정을 Cloudinary로 설정 (선택 사항)
-# Django의 ImageField, FileField에서 저장하는 모든 업로드 파일은 MEDIA_ROOT가 아닌 Cloudinary에 저장됩니다.
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "HOST": ENV.get("POSTGRES_HOST", "db"),
+        "USER": ENV.get("POSTGRES_USER", "postgres"),
+        "PASSWORD": ENV.get("POSTGRES_PASSWORD", "postgres"),
+        "NAME": ENV.get("POSTGRES_DB", "oz_collabo"),
+        "PORT": ENV.get("POSTGRES_PORT", 5432),
+    }
+}
+
 
 # # 기본 이미지 url 설정
 # BASE_STATIC_URL = STATIC_URL + "images/"
@@ -56,11 +57,5 @@ EMAIL_HOST_PASSWORD = ENV.get("EMAIL_HOST_PASSWORD", "")
 
 
 # OAuth
-NAVER_CLIENT_ID = ENV.get("NAVER_CLIENT_ID", "")
-NAVER_CLIENT_SECRET = ENV.get("NAVER_CLIENT_SECRET", "")
-
 KAKAO_REST_API_KEY = ENV.get("KAKAO_REST_API_KEY", "")
 KAKAO_CLIENT_SECRET = ENV.get("KAKAO_CLIENT_SECRET", "")
-
-GOOGLE_CLIENT_ID = ENV.get("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = ENV.get("GOOGLE_CLIENT_SECRET", "")

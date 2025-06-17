@@ -1,8 +1,19 @@
 from django.conf import settings
 from django.db import models
 
-# 향후 파일 업로드 모델과 연결할 예정 (주석처리)
-# from apps.upload.models import File
+from apps.upload.models import File
+
+# 자격증 유형 선택지 (라디오 버튼 선택용)
+CERTIFICATE_TYPE_CHOICES = [
+    ("자격증", "자격증"),
+    ("경력증명서", "경력증명서"),
+]
+
+# 자격증 유형 선택지 (라디오 버튼 선택용)
+CERTIFICATE_TYPE_CHOICES = [
+    ("자격증", "자격증"),
+    ("경력증명서", "경력증명서"),
+]
 
 
 class LeaderApplicationStatus(models.TextChoices):
@@ -24,14 +35,6 @@ class LeaderApplication(models.Model):
     # 다중 선택 가능 (JSON으로 저장)
     certificate_type = models.JSONField(verbose_name="자격증 종류")
 
-    # 향후 파일 업로드 기능 주석처리 상태
-    # certificate_upload = models.ManyToManyField(
-    #     File,
-    #     blank=True,
-    #     related_name='leader_certificate_files',
-    #     verbose_name='자격증 파일들'
-    # )
-
     # 반복 가능한 활동 사례 (별도 테이블로 구성)
     status = models.CharField(
         max_length=10,
@@ -50,6 +53,22 @@ class LeaderApplication(models.Model):
 
     def __str__(self):
         return f"{self.user.nickname or self.user.email}의 리더 신청서"
+
+
+class LeaderCertificate(models.Model):
+    leader_application = models.ForeignKey(
+        LeaderApplication,
+        on_delete=models.CASCADE,
+        related_name="certificates",
+        verbose_name="리더 신청서",
+    )
+    certificate_type = models.CharField(
+        max_length=30, choices=CERTIFICATE_TYPE_CHOICES, verbose_name="증명서 유형"
+    )
+    file = models.FileField(upload_to="certificates/", verbose_name="파일")
+
+    def __str__(self):
+        return f"{self.certificate_type} - {self.file.name}"
 
 
 class PreviousActivity(models.Model):

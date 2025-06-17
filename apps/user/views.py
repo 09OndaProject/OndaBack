@@ -1,7 +1,7 @@
-import copy
 from urllib.parse import urlencode
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.signing import SignatureExpired, TimestampSigner
 from django.db.models import Q
@@ -31,7 +31,7 @@ from rest_framework_simplejwt.serializers import (
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.user.models import User, UserRole
+from apps.user.models import UserRole
 from apps.user.serializers import (
     LogoutSerializer,
     PasswordCheckSerializer,
@@ -40,15 +40,16 @@ from apps.user.serializers import (
     RegisterSerializer,
     UserListSerializer,
 )
-from utils.email import send_email
+from apps.user.utils.jwt_token import modify_access_token
 from utils.pagination import CustomPageNumberPagination
 from utils.permissions import AdminOnly
+
+User = get_user_model()
 
 
 # 회원 가입
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
-    # queryset = User.objects.select_related("area","interest","digital_level")
     serializer_class = RegisterSerializer  # Serializer
 
     @swagger_auto_schema(
@@ -200,6 +201,7 @@ class VerifyEmailView(APIView):
         except Exception:
             params = {
                 "message": "유효하지 않은 인증 코드입니다.",
+                "verified": False,
             }
             url = f"{settings.FRONTEND_URL}/users/verify/email?{urlencode(params)}"
             return redirect(url)
@@ -289,6 +291,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 secure=True,  # HTTPS 환경에서만 전송
                 # secure=False,  # 로컬 개발 환경에 맞춰서 설정
                 samesite="Lax",  # CSRF 공격 방지 설정
+                # samesite="None",  # 다른 도메인 간에도 쿠키 전송 허용
                 path="/api/users/token",  # 필요한 경로에만 쿠키 사용
                 max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)
             )
@@ -433,7 +436,13 @@ class CustomTokenRefreshView(APIView):
         # SimpleJWT Serializer로 Access Token 재발급
         serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
         serializer.is_valid(raise_exception=True)
-        new_access_token = serializer.validated_data.get("access")
+        new_access_token = serializer.validated_data.get(
+            "access"
+        )  # access token 문자열 (JWT 형식)
+
+        new_access_token = modify_access_token(
+            new_access_token
+        )  # 토큰에 유저 정보 추가
 
         # 새로운 커스텀 CSRF 토큰 발급 (선택)
         new_csrf_token = get_token(request=request)
@@ -457,6 +466,7 @@ class CustomTokenRefreshView(APIView):
                 key="refresh_token",
                 value=new_refresh_token,
                 httponly=True,
+                # secure=True,  # HTTPS 환경에서만 전송
                 secure=False,  # 로컬 개발환경
                 samesite="Lax",
                 path="/api/users/token",
@@ -466,123 +476,12 @@ class CustomTokenRefreshView(APIView):
         return final_response
 
 
-# 유저 목록/검색 (관리자)
-class UserListView(ListAPIView):
-    queryset = User.objects.all()
-    # queryset = User.objects.only("id")
-    # queryset = User.objects.select_related("area","interest","digital_level")
-    serializer_class = UserListSerializer
-    # permission_classes = [IsAuthenticated]
-    # permission_classes = [AdminOnly]
-    # authentication_classes = [JWTAuthentication]  # JWT 인증
-    pagination_class = CustomPageNumberPagination
-
-    def get_queryset(self):
-        query = self.request.query_params
-        q = Q()
-
-        # :=는 Python 3.8 이상에서 도입된 **"월러스 연산자 (walrus operator)"**입니다.
-        # 이 연산자는 할당과 동시에 표현식 안에서 변수 사용이 가능하게 해줍니다.
-
-        if email := query.get("email"):
-            q &= Q(email__icontains=email)  # 부분 일치 검색
-
-        if name := query.get("name"):
-            q &= Q(name__icontains=name)
-
-        if nickname := query.get("nickname"):
-            q &= Q(nickname__icontains=nickname)
-
-        if phone_number := query.get("phone_number"):
-            q &= Q(phone_number__icontains=phone_number)
-
-        if date_of_birth := query.get("date_of_birth"):
-            q &= Q(date_of_birth=date_of_birth)  # 정확 일치
-
-        if area := query.get("area"):
-            q &= Q(area__name__icontains=area)  # 외래키 이름 검색 가정
-
-        if interest := query.get("interest"):
-            q &= Q(interest__name__icontains=interest)
-
-        if digital_level := query.get("digital_level"):
-            q &= Q(digital_level__name__icontains=digital_level)
-
-        if role := query.get("role"):
-            try:
-                role_value = UserRole[role.upper()].value
-                q &= Q(role=role_value)
-            except KeyError:
-                pass
-
-        return self.queryset.filter(q).order_by("-created_at")
-
-    # 예: ListAPIView 또는 ViewSet.get_queryset 에 해당하는 list()
-    @swagger_auto_schema(
-        tags=["관리자/유저 목록"],
-        operation_summary="관리자용 유저 목록",
-        manual_parameters=[
-            openapi.Parameter(
-                "email",
-                openapi.IN_QUERY,
-                description="이메일",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "name", openapi.IN_QUERY, description="이름", type=openapi.TYPE_STRING
-            ),
-            openapi.Parameter(
-                "nickname",
-                openapi.IN_QUERY,
-                description="닉네임",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "phone_number",
-                openapi.IN_QUERY,
-                description="전화번호",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "date_of_birth",
-                openapi.IN_QUERY,
-                description="생년월일",
-                type=openapi.TYPE_STRING,
-                format="date",
-            ),
-            openapi.Parameter(
-                "role",
-                openapi.IN_QUERY,
-                description="유저 역할(admin, user, leader)",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "area",
-                openapi.IN_QUERY,
-                description="지역 ID",
-                type=openapi.TYPE_INTEGER,
-            ),
-        ],
-    )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-
-# 유저 수정
+# 유저 상세, 수정, 삭제
 class ProfileView(RetrieveUpdateDestroyAPIView):
-    queryset = User.objects.all()
-    # queryset = User.objects.select_related("area","interest","digital_level")
+    # queryset = User.objects.all()
+    queryset = User.objects.select_related(
+        "area", "area__parent", "area__parent__parent", "digital_level", "file"
+    ).prefetch_related("interests")
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated]  # 인증된 사용자만 데이터 접근 가능
     authentication_classes = [JWTAuthentication]  # JWT 인증
@@ -590,7 +489,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
     http_method_names = ["get", "patch", "delete"]  # ← PUT 제외
 
     def get_queryset(self):
-        if self.action == "destroy":
+        if self.request.method == "DELETE":
             return User.objects.only("id")
         return super().get_queryset()
 
@@ -605,11 +504,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
         # -> 각 요청마다 입/출력에 사용되는 데이터의 형식이 다르기 때문
         # print("요청 메서드:", self.request.method)
 
-        if self.request.method == "GET":
-            print("요청 메서드: GET")
-            return ProfileSerializer
-
-        elif self.request.method == "PATCH":
+        if self.request.method == "PATCH":
             print("요청 메서드: PATCH")
             return ProfileUpdateSerializer
 
@@ -640,7 +535,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        return Response({"message": "프로필 정보를 불러왔습니다.", **serializer.data})
+        return Response({"message": "유저 정보를 불러왔습니다.", **serializer.data})
 
     @swagger_auto_schema(
         tags=["유저/프로필"],
