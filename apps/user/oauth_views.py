@@ -65,9 +65,9 @@ class OauthLoginRedirectView(APIView, ABC):
         provider_info = self.get_provider_info()
         callback_url = request.query_params.get(
             "callback_url",
-            urljoin(
-                request.META.get("HTTP_ORIGIN", FRONTEND_URL),
-                provider_info["callback_url"],
+            (
+                request.META.get("HTTP_ORIGIN", FRONTEND_URL)
+                + provider_info["callback_url"]
             ),
         )
         params = get_social_login_params(provider_info, callback_url)
@@ -119,9 +119,9 @@ class OAuthCallbackView(APIView, ABC):
         provider_info = self.get_provider_info()
         provider_info["callback_url"] = request.query_params.get(
             "callback_url",
-            urljoin(
-                request.META.get("HTTP_ORIGIN", FRONTEND_URL),
-                provider_info["callback_url"],
+            (
+                request.META.get("HTTP_ORIGIN", FRONTEND_URL)
+                + provider_info["callback_url"]
             ),
         )
 
