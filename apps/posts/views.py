@@ -1,3 +1,4 @@
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -67,6 +68,7 @@ class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
 class LikeToggleView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(tags=["좋아요"])
     def post(self, request, post_id):
         post = Post.objects.get(pk=post_id)
         like, created = Like.objects.get_or_create(user=request.user, post=post)
