@@ -66,7 +66,9 @@ class LeaderCertificate(models.Model):
         max_length=30, choices=CERTIFICATE_TYPE_CHOICES, verbose_name="증명서 유형"
     )
     file = models.ForeignKey(
-        File, on_delete=models.CASCADE, verbose_name="파일",
+        File,
+        on_delete=models.CASCADE,
+        verbose_name="파일",
     )
 
     def __str__(self):
