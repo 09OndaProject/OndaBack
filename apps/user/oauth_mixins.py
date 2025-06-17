@@ -3,9 +3,9 @@ from django.conf import settings
 
 from apps.user.models import Provider
 
-
 CALLBACK_URL = "/users/kakao/callback"
 CALLBACK_URL_TEST = "/api/users/kakao/callback-test"
+
 
 # 카카오
 class KaKaoProviderInfoMixin:
