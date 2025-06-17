@@ -72,6 +72,8 @@ class LeaderApplicationCreateSerializer(serializers.ModelSerializer):
 class LeaderApplicationListSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_name = serializers.CharField(source="user.name", read_only=True)
+    user_phone = serializers.CharField(source="user.phone_number", read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = LeaderApplication
@@ -81,6 +83,8 @@ class LeaderApplicationListSerializer(serializers.ModelSerializer):
             "user_name",
             "status",
             "created_at",
+            "updated_at",
+            "user_phone",
         ]
 
 
@@ -88,8 +92,10 @@ class LeaderApplicationListSerializer(serializers.ModelSerializer):
 class LeaderApplicationDetailSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_name = serializers.CharField(source="user.name", read_only=True)
+    user_phone = serializers.CharField(source="user.phone_number", read_only=True)
     previous_activities = PreviousActivitySerializer(many=True, read_only=True)
     certificates = LeaderCertificateSerializer(many=True, read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = LeaderApplication
@@ -97,12 +103,14 @@ class LeaderApplicationDetailSerializer(serializers.ModelSerializer):
             "id",
             "user_email",
             "user_name",
+            "user_phone",
             "bio",
             "certificate_type",
             "certificates",
             "previous_activities",
             "status",
             "created_at",
+            "updated_at",
         ]
 
 
