@@ -31,8 +31,6 @@ class LeaderApplication(models.Model):
     )
 
     bio = models.TextField(verbose_name="자기소개")
-
-    # 다중 선택 가능 (JSON으로 저장)
     certificate_type = models.JSONField(verbose_name="자격증 종류")
 
     # 반복 가능한 활동 사례 (별도 테이블로 구성)
@@ -51,6 +49,8 @@ class LeaderApplication(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="신청일시")
 
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="처리일시")
+
     def __str__(self):
         return f"{self.user.nickname or self.user.email}의 리더 신청서"
 
@@ -65,7 +65,11 @@ class LeaderCertificate(models.Model):
     certificate_type = models.CharField(
         max_length=30, choices=CERTIFICATE_TYPE_CHOICES, verbose_name="증명서 유형"
     )
-    file = models.FileField(upload_to="certificates/", verbose_name="파일")
+    file = models.ForeignKey(
+        File,
+        on_delete=models.CASCADE,
+        verbose_name="파일",
+    )
 
     def __str__(self):
         return f"{self.certificate_type} - {self.file.name}"
