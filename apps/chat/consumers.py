@@ -26,8 +26,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         # 이 유저가 해당 방의 멤버인지 DB에서 확인
         is_member = await database_sync_to_async(
             GroupChatMembership.objects.filter(
-                room_id=self.room_id,
-                user=self.user
+                room_id=self.room_id, user=self.user
             ).exists
         )()
 
@@ -50,7 +49,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         그룹에서 안전하게 퇴장 처리
         """
         # self.room_group_name이 정의되어 있으면 제거
-        if hasattr(self, 'room_group_name'):
+        if hasattr(self, "room_group_name"):
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name,
@@ -86,14 +85,18 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         """
         그룹 메시지를 받아 클라이언트에 전송
         """
-        await self.send(text_data=json.dumps({
-            "user_id": event["user_id"],
-            "message": event["message"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "user_id": event["user_id"],
+                    "message": event["message"],
+                }
+            )
+        )
 
     @database_sync_to_async
     def save_message(self, room_id, user, content):
-        #데이터베이스에 메시지 저장 (동기 -> 비동기 변환)
+        # 데이터베이스에 메시지 저장 (동기 -> 비동기 변환)
         try:
             room = GroupChatRoom.objects.get(id=room_id)
         except GroupChatRoom.DoesNotExist:
