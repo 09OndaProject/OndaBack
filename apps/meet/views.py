@@ -37,6 +37,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
         return [IsAuthenticatedOrReadOnly()]
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="모임 목록 조회",
         manual_parameters=[
             openapi.Parameter(
@@ -110,6 +111,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
         return queryset
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="모임 등록",
         request_body=MeetCreateSerializer,
         responses={
@@ -146,11 +148,41 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     lookup_url_kwarg = "meet_id"
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
+    @swagger_auto_schema(
+        tags=["모임"],
+        operation_summary="모임 상세 조회",
+        responses={200: MeetDetailSerializer()},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
     def get_serializer_class(self):
         if self.request.method == "PATCH":
             return MeetUpdateSerializer
         return MeetDetailSerializer
 
+    @swagger_auto_schema(
+        tags=["모임"],
+        operation_summary="모임 수정",
+        request_body=MeetUpdateSerializer,
+        responses={
+            200: openapi.Response(
+                description="모임 수정 성공",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "message": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="모임 수정이 완료 되었습니다",
+                        ),
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER, example=1),
+                    },
+                ),
+            ),
+            400: "잘못된 요청",
+            403: "권한 없음",
+        },
+    )
     def patch(self, request, *args, **kwargs):
         meet = self.get_object()
 
@@ -169,11 +201,35 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         instance.is_deleted = True
         instance.save()
 
+    @swagger_auto_schema(
+        tags=["모임"],
+        operation_summary="모임 삭제",
+        responses={
+            204: openapi.Response(description="삭제 성공"),
+            403: "권한 없음",
+        },
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
 
 # /api/meets/aply/{meet_id} [POST]
 class MeetApplyView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        tags=["모임"],
+        operation_summary="모임 지원",
+        responses={
+            201: openapi.Response(
+                description="모임 지원 완료",
+                examples={
+                    "application/json": {"detail": "모임 지원이 완료되었습니다."}
+                },
+            ),
+            400: openapi.Response(description="지원 실패 (중복 지원 또는 모집 마감)"),
+        },
+    )
     def post(self, request, meet_id):
         meet = get_object_or_404(Meet, pk=meet_id)
 
@@ -204,6 +260,7 @@ class MeetUserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="특정 유저의 모임 목록 조회",
         manual_parameters=[
             openapi.Parameter("title", openapi.IN_QUERY, type=openapi.TYPE_STRING),
