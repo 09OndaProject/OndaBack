@@ -86,6 +86,24 @@ class MeetListSerializer(serializers.ModelSerializer):
             "leader_image",
         ]
 
+class MeetUserListSerializer(serializers.ModelSerializer):
+    status = serializers.ReadOnlyField()
+    area = serializers.CharField(source="area.full_path", read_only=True)
+
+    class Meta:
+        model = Meet
+        fields = [
+            "id",
+            "title",
+            "description",
+            "area",
+            "date",
+            "max_people",
+            "current_people",
+            "application_deadline",
+            "status",
+            "session_count",
+        ]
 
 class LeaderSerializer(serializers.ModelSerializer):
     file = FileSerializer(read_only=True)
