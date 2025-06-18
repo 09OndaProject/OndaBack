@@ -60,7 +60,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         클라이언트로부터 메시지를 수신했을 때 호출됨
         """
         data = json.loads(text_data)
-        content = data.get("content", "")
+        content = data.get("message", "")
         user = self.scope["user"]
 
         # 인증되지 않은 사용자 메시지 차단
@@ -77,7 +77,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             {
                 "type": "chat_message",
                 "user_id": user.id,
-                "message": message,
+                "message": content,
             },
         )
 
