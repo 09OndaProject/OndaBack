@@ -1955,3 +1955,92 @@ https://websocketking.com/
 
 테스트 주소 입력
 ws://127.0.0.1:8000/ws/group-chat/1/?token=<JWT_ACCESS_TOKEN>
+
+-----------------------------
+drf_yasg 자동 스웨거 문서화 툴
+-----------------------------
+
+라이브러리 추가
+poetry add drf-yasg
+
+INSTALLED_APPS ["drf_yasg",]
+
+# config/schema.py
+# 스웨거 초기화
+schema_view = get_schema_view(
+    openapi.Info(
+        title="WiStar API",
+        default_version="v1",
+        description="WiStar API 문서",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="xowls0131@naver.com"),
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    authentication_classes=[],  # Swagger 자체는 인증 안함
+    permission_classes=[
+        permissions.AllowAny,
+    ],
+    generator_class=ExcludeAppsSchemaGenerator,
+)
+
+# config/urls.py
+# url 추가
+if settings.DEBUG:
+    urlpatterns += [
+        path("admin/", admin.site.urls),
+        path(
+            "swagger<format>",
+            schema_view.without_ui(cache_timeout=0),
+            name="schema-json",
+        ),
+        path(
+            "swagger",
+            schema_view.with_ui("swagger", cache_timeout=0),
+            name="schema-swagger-ui",
+        ),
+        path(
+            "redoc", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
+        ),
+    ]
+
+# 데코레이터 붙이는 법
+# 사용할 메서드 위에 @swagger_auto_schema 붙임
+apiview, genericapiview 쓰면 get, post, put, patch, delete 메서드에 데코레이터 붙이고
+viewset 쓸때는 list, retrieve,update, patial_update, destroy 메서드에 데코레이터 붙임
+
+# config/settings.py
+# 스웨거 페이지 토큰 로그인 설정
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT 인증을 위해 다음과 같이 입력하세요: **Bearer &lt;access_token&gt;**",
+        }
+    },
+}
+
+
+# config/schema.py
+# 특정 앱의 뷰 스웨거 문서화 제외 설정
+class ExcludeAppsSchemaGenerator(OpenAPISchemaGenerator):
+    # 제외할 앱의 뷰 설정  settings.py SWAGGER_EXCLUDED_APPS에 설정
+    EXCLUDED_APPS = getattr(settings, "SWAGGER_EXCLUDED_APPS", [])
+
+    def get_endpoints(self, request):
+        endpoints = super().get_endpoints(request)
+        filtered = {}
+        for path, (view_cls, method_map) in endpoints.items():
+            if not any(
+                view_cls.__module__.startswith(app) for app in self.EXCLUDED_APPS
+            ):
+                filtered[path] = (view_cls, method_map)
+        return filtered
+
+# config/settings.py
+# 제외할 앱 추가
+SWAGGER_EXCLUDED_APPS = [
+    # "apps.user.views",
+]  # 제외할 앱 이름
