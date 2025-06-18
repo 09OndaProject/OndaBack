@@ -37,7 +37,7 @@ class MeetCreateSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
             "link": {"required": False},
-            "file": {"required":False}
+            "file": {"required": False},
         }  # 일단 오픈채팅방 링크는 null가능으로
 
     def validate(self, data):
