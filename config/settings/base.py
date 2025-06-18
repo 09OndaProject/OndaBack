@@ -111,7 +111,8 @@ CORS_ALLOW_CREDENTIALS = True
 ROOT_URLCONF = "config.urls"
 
 # Redis 설정
-ASGI_APPLICATION = "OndaBack.asgi.application"
+ASGI_APPLICATION = "config.asgi.application"
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
