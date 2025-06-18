@@ -44,7 +44,7 @@ class LeaderApplicationListCreateView(generics.ListCreateAPIView):
     def post(self, request, *args, **kwargs):
         # 동일 사용자의 중복 신청 방지
         if LeaderApplication.objects.filter(user=request.user).exists():
-            raise PermissionDenied("이미 신청한 이력이 있습니다.")
+            raise ValidationError("이미 신청한 이력이 있습니다.")
         return self.create(request, *args, **kwargs)
 
     @swagger_auto_schema(
