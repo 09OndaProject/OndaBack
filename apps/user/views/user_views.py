@@ -16,7 +16,6 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.generics import (
     CreateAPIView,
     GenericAPIView,
-    ListAPIView,
     RetrieveUpdateDestroyAPIView,
 )
 from rest_framework.permissions import IsAuthenticated
@@ -38,7 +37,7 @@ from apps.user.serializers.user_serializers import (
     ProfileUpdateSerializer,
     RegisterSerializer,
 )
-from apps.user.utils.jwt_token import modify_access_token
+from apps.user.utils.jwt_token import modify_access_token, set_refresh_token_cookie
 
 User = get_user_model()
 
@@ -280,19 +279,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
             # Refresh Token을 HttpOnly 쿠키로 설정
             final_response = Response(custom_response, status=status.HTTP_200_OK)
-            final_response.set_cookie(
-                key="refresh_token",
-                value=refresh_token,
-                httponly=True,
-                secure=True,  # HTTPS 환경에서만 전송
-                # secure=False,  # 로컬 개발 환경에 맞춰서 설정
-                samesite="Lax",  # CSRF 공격 방지 설정
-                # samesite="None",  # 다른 도메인 간에도 쿠키 전송 허용
-                path="/api/users/token",  # 필요한 경로에만 쿠키 사용
-                max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)
+            final_response = set_refresh_token_cookie(
+                final_response, refresh_token, request
             )
 
             return final_response
+
         except AuthenticationFailed as e:
             # SimpleJWT가 raise하는 예외
             return Response(
@@ -458,15 +450,8 @@ class CustomTokenRefreshView(APIView):
 
         # 새 리프레시 토큰이 있을 때만 쿠키에 다시 설정
         if new_refresh_token:
-            final_response.set_cookie(
-                key="refresh_token",
-                value=new_refresh_token,
-                httponly=True,
-                # secure=True,  # HTTPS 환경에서만 전송
-                secure=False,  # 로컬 개발환경
-                samesite="Lax",
-                path="/api/users/token",
-                max_age=60 * 60 * 24 * 1,
+            final_response = set_refresh_token_cookie(
+                final_response, refresh_token, request
             )
 
         return final_response

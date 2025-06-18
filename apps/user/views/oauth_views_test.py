@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from urllib.parse import urlencode
 
 import requests
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.signing import BadSignature
@@ -14,7 +15,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from apps.user.models import Provider
-from apps.user.utils.jwt_token import get_tokens_for_user
+from apps.user.utils.jwt_token import get_tokens_for_user, set_refresh_token_cookie
 from apps.user.utils.oauth_mixins import (
     KaKaoProviderInfoMixin,
 )
@@ -148,15 +149,8 @@ class OAuthCallbackView(APIView, ABC):
         redirect_response = redirect(f"{self.get_frontend_success_url()}?{params}")
 
         # 쿠키 추가
-        redirect_response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            secure=True,  # HTTPS 환경에서만 전송
-            # secure=False,  # 로컬 개발 환경에 맞춰서 설정
-            samesite="Lax",  # CSRF 공격 방지 설정
-            path="/api/users/token",  # 필요한 경로에만 쿠키 사용
-            max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)
+        redirect_response = set_refresh_token_cookie(
+            redirect_response, refresh_token, request
         )
 
         return redirect_response

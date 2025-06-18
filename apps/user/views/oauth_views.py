@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from urllib.parse import unquote, urlencode
 
 import requests
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.signing import BadSignature
@@ -15,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.user.models import Provider
-from apps.user.utils.jwt_token import get_tokens_for_user
+from apps.user.utils.jwt_token import get_tokens_for_user, set_refresh_token_cookie
 from apps.user.utils.oauth_mixins import (
     KaKaoProviderInfoMixin,
 )
@@ -27,7 +28,6 @@ User = get_user_model()
 
 def get_social_login_params(provider_info, callback_url):
     state = signing.dumps(provider_info["state"])
-    print(callback_url)
     params = {
         "response_type": "code",
         "client_id": provider_info["client_id"],
@@ -124,20 +124,10 @@ class OAuthCallbackView(APIView, ABC):
         )
 
         # 엑세스 토큰 요청
-        token_response = self.get_access_token(code, provider_info)
-        if token_response.status_code != 200:
-            return Response({"detail": "토큰을 가져올 수 없습니다."}, status=401)
-
-        access_token = token_response.json().get("access_token")
-        if not access_token:
-            return Response({"detail": "엑세스 토큰이 없습니다."}, status=401)
+        access_token = self.get_access_token(code, provider_info)
 
         # 프로필 요청
-        profile_response = self.get_profile(access_token, provider_info)
-        if profile_response.status_code != 200:
-            return Response({"detail": "프로필을 가져올 수 없습니다."}, status=401)
-
-        profile_data = profile_response.json()
+        profile_data = self.get_profile(access_token, provider_info)
         email, name, nickname = self.get_user_data(profile_data, provider_info)
 
         if not email:
@@ -169,17 +159,7 @@ class OAuthCallbackView(APIView, ABC):
             }
         )
         # 쿠키 추가
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            # False: 로컬 개발 환경에 맞춰서 설정 True: HTTPS 환경에서만 전송
-            # secure=True
-            secure=True if request.scheme=="https" else False,
-            samesite="Lax",  # CSRF 공격 방지 설정
-            path="/api/users/token",  # 필요한 경로에만 쿠키 사용
-            max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)
-        )
+        response = set_refresh_token_cookie(response, refresh_token, request)
 
         return response
 
@@ -189,7 +169,7 @@ class OAuthCallbackView(APIView, ABC):
         requests 라이브러리를 활용하여 Oauth2 API 플랫폼에 액세스 토큰을 요청하는 함수
         """
         if provider_info["provider"] == Provider.GOOGLE:  # 구글
-            return requests.post(
+            response = requests.post(
                 provider_info["token_url"],
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data={
@@ -201,7 +181,7 @@ class OAuthCallbackView(APIView, ABC):
                 },
             )
         else:
-            return requests.get(
+            response = requests.get(
                 provider_info["token_url"],
                 params={
                     "grant_type": "authorization_code",
@@ -211,19 +191,33 @@ class OAuthCallbackView(APIView, ABC):
                 },
             )
 
+        if response.status_code != 200:
+            return Response({"detail": "토큰을 가져올 수 없습니다."}, status=401)
+
+        access_token = response.json().get("access_token")
+        if not access_token:
+            return Response({"detail": "엑세스 토큰이 없습니다."}, status=401)
+
+        return access_token
+
     # 프로필 가져오는 메서드
     def get_profile(self, access_token, provider_info):
         """
         requests 라이브러리를 활용하여 Oauth2 API 플랫폼에 액세스 토큰을 사용하여 프로필 정보 조회를 요청하는 함수
         """
 
-        return requests.get(
+        response = requests.get(
             provider_info["profile_url"],
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
             },
         )
+
+        if response.status_code != 200:
+            return Response({"detail": "프로필을 가져올 수 없습니다."}, status=401)
+
+        return response.json()
 
     def get_user_data(self, profile_data, provider_info):
         """
