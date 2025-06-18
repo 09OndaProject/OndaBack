@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from urllib.parse import unquote, urlencode, urljoin
+from urllib.parse import unquote, urlencode
 
 import requests
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import signing
 from django.core.signing import BadSignature
@@ -14,13 +13,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.user.models import Provider
-from apps.user.oauth_mixins import (
+from apps.user.utils.jwt_token import get_tokens_for_user
+from apps.user.utils.oauth_mixins import (
     KaKaoProviderInfoMixin,
 )
-from apps.user.utils.jwt_token import get_tokens_for_user
 from apps.user.utils.random_nickname import generate_unique_numbered_nickname
 from config.settings import FRONTEND_URL
 
@@ -175,8 +173,9 @@ class OAuthCallbackView(APIView, ABC):
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,  # HTTPS 환경에서만 전송
-            # secure=False,  # 로컬 개발 환경에 맞춰서 설정
+            # False: 로컬 개발 환경에 맞춰서 설정 True: HTTPS 환경에서만 전송
+            # secure=True
+            secure=True if request.scheme=="https" else False,
             samesite="Lax",  # CSRF 공격 방지 설정
             path="/api/users/token",  # 필요한 경로에만 쿠키 사용
             max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)

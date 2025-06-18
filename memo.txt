@@ -1804,3 +1804,154 @@ Postman, cURL 등에서는 임의 조작이 가능하므로 절대 보안 판단
 서버와 OAuth 플랫폼이 "허용된 출처"와 "리디렉션 경로"만 허용하므로 조작 가능성은 매우 낮음
 CORS, 소셜 로그인 설정 등에서 출처(origin)/redirect URI가 정확히 일치해야 동작하므로,
 조작해서 우회하는 건 사실상 불가능
+
+
+----------------
+채팅기능 추가
+----------------
+
+✅ 1. 전체 구성도
+Django + Channels: WebSocket 서버 구현
+
+Redis: Channels의 메시지 브로커
+
+Frontend (옵션): JS로 WebSocket 연결
+
+DB (PostgreSQL 등): 메시지 저장
+
+✅ 2. 패키지 설치
+poetry add channels channels-redis
+poetry add 'uvicorn[standard]'
+
+✅ 3. settings.py 설정
+INSTALLED_APPS = [
+    ...
+    'channels',
+    'chat',  # 앱 이름
+]
+
+ASGI_APPLICATION = "your_project.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],  # 또는 Docker 내부에서 'redis'
+        },
+    },
+}
+✅ 4. asgi.py 설정
+import os
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from django.core.asgi import get_asgi_application
+import chat.routing  # 앱의 routing.py
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "your_project.settings")
+
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),
+    "websocket": AuthMiddlewareStack(
+        URLRouter(chat.routing.websocket_urlpatterns)
+    ),
+})
+✅ 5. chat/routing.py
+from django.urls import re_path
+from . import consumers
+
+websocket_urlpatterns = [
+    re_path(r"ws/chat/(?P<room_name>\w+)/$", consumers.ChatConsumer.as_asgi()),
+]
+✅ 6. chat/consumers.py
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+        self.room_group_name = f"chat_{self.room_name}"
+
+        # 그룹에 참가
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name,
+        )
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # 그룹에서 나가기
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name,
+        )
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        message = data["message"]
+
+        # 그룹에 메시지 전송
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "chat_message",
+                "message": message,
+            },
+        )
+
+    async def chat_message(self, event):
+        message = event["message"]
+
+        # WebSocket으로 메시지 전송
+        await self.send(text_data=json.dumps({
+            "message": message,
+        }))
+✅ 7. JS 프론트 WebSocket 예시
+<script>
+  const roomName = "room1";
+  const socket = new WebSocket(
+    "ws://" + window.location.host + "/ws/chat/" + roomName + "/"
+  );
+
+  socket.onmessage = function (e) {
+    const data = JSON.parse(e.data);
+    console.log("Received:", data.message);
+  };
+
+  socket.onopen = function () {
+    socket.send(JSON.stringify({
+      message: "Hello from browser!",
+    }));
+  };
+</script>
+✅ 8. 메시지 저장 (선택)
+
+models.py에 메시지를 저장하고 싶다면:
+
+class ChatMessage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    room_name = models.CharField(max_length=255)
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+consumers.py의 receive()에서 DB에 저장도 함께 처리:
+
+from .models import ChatMessage
+
+await ChatMessage.objects.acreate(
+    user=self.scope["user"],  # 인증된 유저
+    room_name=self.room_name,
+    message=message,
+)
+
+env에 설정
+DJANGO_SETTINGS_MODULE=config.settings
+
+uvicorn 실행
+poetry run uvicorn config.asgi:application --reload --env-file envs/.env
+
+채팅 테스트
+https://websocketking.com/
+
+테스트 주소 입력
+ws://127.0.0.1:8000/ws/group-chat/1/?token=<JWT_ACCESS_TOKEN>

@@ -12,13 +12,12 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.user.models import Provider
-from apps.user.oauth_mixins import (
+from apps.user.utils.jwt_token import get_tokens_for_user
+from apps.user.utils.oauth_mixins import (
     KaKaoProviderInfoMixin,
 )
-from apps.user.utils.jwt_token import get_tokens_for_user
 from apps.user.utils.random_nickname import generate_unique_numbered_nickname
 
 User = get_user_model()

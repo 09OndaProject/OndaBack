@@ -25,8 +25,9 @@ from config.schema import schema_view  # 스웨거 설정 파일
 env = settings.ENV.get("DJANGO_ENV", "local")
 
 urlpatterns = [
-    path("api/", include("apps.user.urls")),
-    path("api/", include("apps.user.admin_urls")),
+    path("api/", include("apps.user.urls.user_urls")),
+    path("api/", include("apps.user.urls.oauth_urls")),
+    path("api/", include("apps.user.urls.admin_urls")),
     path("api/", include("apps.upload.urls")),
     path("api/", include("apps.reviews.urls")),
     path("api/", include("apps.options.urls")),

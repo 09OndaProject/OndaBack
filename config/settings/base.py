@@ -86,7 +86,9 @@ MIDDLEWARE = [
 # 프론트 도메인 등록
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
+    "http://127.0.0.1:8000",
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "http://localhost:5173",
     "https://onda-develop-868p.vercel.app",
     "https://www.ondamoim.com",

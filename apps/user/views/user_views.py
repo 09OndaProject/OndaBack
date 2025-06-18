@@ -31,18 +31,14 @@ from rest_framework_simplejwt.serializers import (
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.user.models import UserRole
-from apps.user.serializers import (
+from apps.user.serializers.user_serializers import (
     LogoutSerializer,
     PasswordCheckSerializer,
     ProfileSerializer,
     ProfileUpdateSerializer,
     RegisterSerializer,
-    UserListSerializer,
 )
 from apps.user.utils.jwt_token import modify_access_token
-from utils.pagination import CustomPageNumberPagination
-from utils.permissions import AdminOnly
 
 User = get_user_model()
 
