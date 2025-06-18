@@ -21,6 +21,7 @@ from .serializers import (
     MeetDetailSerializer,
     MeetListSerializer,
     MeetUpdateSerializer,
+    MeetUserListSerializer,
 )
 
 
@@ -144,17 +145,11 @@ class MeetListCreateView(generics.ListCreateAPIView):
 
 # /api/meets/{meet_id} [GET, PATCH, DELETE]
 class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Meet.objects.all()
+    queryset = Meet.objects.select_related(
+        "user", "file", "category", "digital_level"
+    ).prefetch_related("applications__user__file")
     lookup_url_kwarg = "meet_id"
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-
-    @swagger_auto_schema(
-        tags=["모임"],
-        operation_summary="모임 상세 조회",
-        responses={200: MeetDetailSerializer()},
-    )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.request.method == "PATCH":
@@ -163,7 +158,15 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     @swagger_auto_schema(
         tags=["모임"],
-        operation_summary="모임 수정",
+        operation_summary="모임 상세 조회",
+        responses={200: MeetDetailSerializer()},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        tags=["모임"],
+        operation_summary="모임 부분 수정",
         request_body=MeetUpdateSerializer,
         responses={
             200: openapi.Response(
@@ -197,20 +200,24 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
             status=status.HTTP_200_OK,
         )
 
-    def perform_destroy(self, instance):
-        instance.is_deleted = True
-        instance.save()
-
     @swagger_auto_schema(
         tags=["모임"],
-        operation_summary="모임 삭제",
+        operation_summary="모임 삭제 (soft delete)",
         responses={
-            204: openapi.Response(description="삭제 성공"),
+            204: "모임 삭제 성공",
             403: "권한 없음",
         },
     )
     def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
+        meet = self.get_object()
+        if meet.user != request.user:
+            raise PermissionDenied("모임을 삭제할 권한이 없습니다.")
+        self.perform_destroy(meet)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save()
 
 
 # /api/meets/aply/{meet_id} [POST]
@@ -256,37 +263,15 @@ class MeetApplyView(APIView):
 
 # /api/meets/users/{user_id} [GET]
 class MeetUserListView(generics.ListAPIView):
-    serializer_class = MeetListSerializer
+    serializer_class = MeetUserListSerializer
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         tags=["모임"],
-        operation_summary="특정 유저의 모임 목록 조회",
-        manual_parameters=[
-            openapi.Parameter("title", openapi.IN_QUERY, type=openapi.TYPE_STRING),
-            openapi.Parameter("area", openapi.IN_QUERY, type=openapi.TYPE_STRING),
-            openapi.Parameter("interest", openapi.IN_QUERY, type=openapi.TYPE_STRING),
-            openapi.Parameter(
-                "digital_level", openapi.IN_QUERY, type=openapi.TYPE_INTEGER
-            ),
-        ],
+        operation_summary="사용자 모임 목록 조회",
+        responses={200: MeetUserListSerializer(many=True)},
     )
     def get_queryset(self):
         user_id = self.kwargs.get("user_id")
-        queryset = Meet.objects.filter(user_id=user_id)
-
-        title = self.request.query_params.get("title")
-        area = self.request.query_params.get("area")
-        interest = self.request.query_params.get("interest")
-        digital_level = self.request.query_params.get("digital_level")
-
-        if title:
-            queryset = queryset.filter(title__icontains=title)
-        if area:
-            queryset = queryset.filter(area=area)
-        if interest:
-            queryset = queryset.filter(interest=interest)
-        if digital_level:
-            queryset = queryset.filter(digitalLevel=digital_level)
-
+        queryset = Meet.objects.select_related("area").filter(user_id=user_id)
         return queryset
