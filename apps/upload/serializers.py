@@ -13,6 +13,7 @@ class FileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "user_id",
+            "category",
             "file",
             "file_type",
             "file_name",
@@ -38,7 +39,11 @@ class FileSerializer(serializers.ModelSerializer):
 
             for upload_file in request.FILES.getlist("file"):
                 print("uploading file", upload_file)
-                file = File(file=upload_file, user=request.user)
+                file = File(
+                    file=upload_file,
+                    user=request.user,
+                    category=validated_data.get("category"),
+                )
                 file.prepare(
                     format=request.data.get("format", "webp").upper(),
                     quality=int(request.data.get("quality", 85)),
