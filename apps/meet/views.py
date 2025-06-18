@@ -38,6 +38,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
         return [IsAuthenticatedOrReadOnly()]
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="모임 목록 조회",
         manual_parameters=[
             openapi.Parameter(
@@ -111,6 +112,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
         return queryset
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="모임 등록",
         request_body=MeetCreateSerializer,
         responses={
@@ -155,6 +157,7 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         return MeetDetailSerializer
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="모임 상세 조회",
         responses={200: MeetDetailSerializer()},
     )
@@ -162,6 +165,7 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         return super().get(request, *args, **kwargs)
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="모임 부분 수정",
         request_body=MeetUpdateSerializer,
         responses={
@@ -197,6 +201,7 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         )
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="모임 삭제 (soft delete)",
         responses={
             204: "모임 삭제 성공",
@@ -219,6 +224,19 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 class MeetApplyView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        tags=["모임"],
+        operation_summary="모임 지원",
+        responses={
+            201: openapi.Response(
+                description="모임 지원 완료",
+                examples={
+                    "application/json": {"detail": "모임 지원이 완료되었습니다."}
+                },
+            ),
+            400: openapi.Response(description="지원 실패 (중복 지원 또는 모집 마감)"),
+        },
+    )
     def post(self, request, meet_id):
         meet = get_object_or_404(Meet, pk=meet_id)
 
@@ -249,6 +267,7 @@ class MeetUserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
+        tags=["모임"],
         operation_summary="사용자 모임 목록 조회",
         responses={200: MeetUserListSerializer(many=True)},
     )
