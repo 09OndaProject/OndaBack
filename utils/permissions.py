@@ -19,7 +19,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
         # obj = view.get_object(request, *view.args, **view.kwargs)
         if hasattr(obj, "user_id"):
-            return request.user == obj.user_id
+            return request.user == obj.user
         else:
             return False
 

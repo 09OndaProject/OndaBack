@@ -44,7 +44,7 @@ class Meet(TimestampModel):
         Category, on_delete=models.SET_NULL, null=True, verbose_name="카테고리"
     )
     file = models.OneToOneField(
-        File, on_delete=models.CASCADE, verbose_name="대표이미지"
+        File, on_delete=models.CASCADE, null=True, verbose_name="대표이미지"
     )
     title = models.CharField(max_length=100, verbose_name="이름")
     description = models.TextField(blank=True, null=True, verbose_name="소개")

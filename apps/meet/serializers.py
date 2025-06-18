@@ -20,7 +20,6 @@ class MeetCreateSerializer(serializers.ModelSerializer):
         fields = [
             "title",
             "description",
-            "user",
             "area",
             "digital_level",
             "category",
@@ -38,6 +37,7 @@ class MeetCreateSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
             "link": {"required": False},
+            "file": {"required": False},
         }  # 일단 오픈채팅방 링크는 null가능으로
 
     def validate(self, data):
@@ -200,10 +200,10 @@ class MeetDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_meet_rating(self, obj):
-        return obj.review_set.aggregate(avg=Avg("rating"))["avg"] or 0
+        return obj.reviews.aggregate(avg=Avg("rating"))["avg"] or 0
 
     def get_review_count(self, obj):
-        return obj.review_set.count()
+        return obj.reviews.count()
 
     def get_schedule(self, obj):
         if not obj.date or not obj.session_count:
