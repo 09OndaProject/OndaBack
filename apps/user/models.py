@@ -8,6 +8,7 @@ from apps.options.models import Area, DigitalLevel, Interest
 from apps.upload.models import File
 from utils.models import TimestampModel
 
+
 # 사용자 지정 메니져
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **kwargs):
