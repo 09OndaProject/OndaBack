@@ -303,14 +303,33 @@ class MeetApplyView(APIView):
         )
 
 
-# /api/meets/users/{user_id} [GET]
-class MeetUserListView(generics.ListAPIView):
+# /api/meets/leaders/{leader_id} [GET]
+class MeetLeaderListView(generics.ListAPIView):
     serializer_class = MeetUserListSerializer
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         tags=["모임"],
-        operation_summary="사용자 모임 목록 조회",
+        operation_summary="리더 모임 목록 조회",
+        responses={200: MeetUserListSerializer(many=True)},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        leader_id = self.kwargs.get("leader_id")
+        queryset = Meet.objects.select_related("area", "file").filter(user_id=leader_id)
+        return queryset
+
+
+# /api/meets/users/{user_id} [GET]
+class MeetUserListView(generics.ListAPIView):
+    serializer_class = MeetUserListSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+
+    @swagger_auto_schema(
+        tags=["모임"],
+        operation_summary="사용자가 신청한 모임 목록 조회",
         responses={200: MeetUserListSerializer(many=True)},
     )
     def get(self, request, *args, **kwargs):
@@ -318,5 +337,9 @@ class MeetUserListView(generics.ListAPIView):
 
     def get_queryset(self):
         user_id = self.kwargs.get("user_id")
-        queryset = Meet.objects.select_related("area").filter(user_id=user_id)
+        queryset = (
+            Meet.objects.filter(applications__user_id=user_id)
+            .select_related("area", "file")
+            .distinct()
+        )
         return queryset

@@ -9,6 +9,11 @@ urlpatterns = [
     path("meets/apply/<int:meet_id>", MeetApplyView.as_view()),
     path("meets/<int:meet_id>", MeetRetrieveUpdateDestroyView.as_view()),
     path(
+        "meets/leaders/<int:leader_id>",
+        MeetLeaderListView.as_view(),
+        name="leader-meet-list",
+    ),
+    path(
         "meets/users/<int:user_id>", MeetUserListView.as_view(), name="user-meet-list"
     ),
 ]
