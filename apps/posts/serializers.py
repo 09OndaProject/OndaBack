@@ -33,18 +33,15 @@ class PostSerializer(serializers.ModelSerializer):
             "is_liked",
         ]
 
-        def get_is_mine(self, obj):
-            # context에 request가 있어야 함 (APIView에서 serializer에 전달됨)
-            request = self.context.get("request")
-            return (
-                request and request.user.is_authenticated and obj.user == request.user
-            )
+    def get_is_mine(self, obj):
+        request = self.context.get("request")
+        return request and request.user.is_authenticated and obj.user == request.user
 
-        def get_is_liked(self, obj):
-            request = self.context.get("request")
-            if not request or not request.user.is_authenticated:
-                return False
-            return obj.likes.filter(user=request.user).exists()
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.likes.filter(user=request.user).exists()
 
 
 class RecursiveField(serializers.Serializer):
