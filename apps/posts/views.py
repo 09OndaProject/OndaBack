@@ -15,6 +15,7 @@ class PostListCreateView(generics.ListCreateAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ["title", "content"]
 
+    @swagger_auto_schema(tags=["게시글"])
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -32,12 +33,14 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
+
     queryset = Comment.objects.filter(parent=None).order_by(
         "-created_at"
     )  # 최상위 댓글만
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(tags=["댓글"])
     def get_queryset(self):
         # 특정 게시글(post_id)에 대한 댓글만
         post_id = self.kwargs["post_id"]
@@ -46,7 +49,9 @@ class CommentListCreateView(generics.ListCreateAPIView):
         )
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user, post_id=self.kwargs["post_id"])
+        serializer.save(
+            user=self.request.user, post=Post.objects.get(pk=self.kwargs["post_id"])
+        )
 
 
 class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
