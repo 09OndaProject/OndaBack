@@ -9,16 +9,6 @@ from apps.upload.models import File
 from utils.models import TimestampModel
 
 
-class UserInterest(models.Model):
-    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
-    interest = models.ForeignKey("options.Interest", on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = "user_interest"
-        verbose_name = "유저 관심사"
-        verbose_name_plural = f"{verbose_name} 목록"
-
-
 # 사용자 지정 메니져
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **kwargs):
@@ -100,11 +90,11 @@ class Provider(IntEnum):
 
 class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아서 사용
     email = models.EmailField(
-        verbose_name="이메일", max_length=50, unique=True
+        verbose_name="이메일", max_length=100, unique=True
     )  # 로그인시 유저아이디 대신 사용
-    name = models.CharField(verbose_name="이름", max_length=25, blank=True, null=True)
+    name = models.CharField(verbose_name="이름", max_length=50, blank=True, null=True)
     nickname = models.CharField(
-        verbose_name="닉네임", max_length=25, null=True, unique=True
+        verbose_name="닉네임", max_length=50, null=True, unique=True
     )
     phone_number = models.CharField(max_length=11, blank=True, null=True)
     date_of_birth = models.DateField(verbose_name="생년월일", blank=True, null=True)
