@@ -1822,6 +1822,8 @@ DB (PostgreSQL 등): 메시지 저장
 ✅ 2. 패키지 설치
 poetry add channels channels-redis
 poetry add 'uvicorn[standard]'
+brew install redis
+brew services start redis
 
 ✅ 3. settings.py 설정
 INSTALLED_APPS = [
