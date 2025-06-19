@@ -1,5 +1,7 @@
 import json
 
+import boto3
+from django.conf import settings
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -132,6 +134,9 @@ class FileDeleteView(DestroyModelMixin, GenericAPIView):
 
         files = File.objects.filter(id__in=ids)
 
+        # if settings.STORAGES:
+        #     bulk_delete_s3_files(files)
+
         deleted_count = 0
         for file in files:
             file.delete()
@@ -141,3 +146,43 @@ class FileDeleteView(DestroyModelMixin, GenericAPIView):
             {"message": "삭제 성공", "deleted_count": deleted_count},
             status=status.HTTP_200_OK,
         )
+
+
+# def bulk_delete_s3_files(file_queryset):
+#     keys = [{"Key": file.file.name} for file in file_queryset if file.file.name]
+#
+#     options = settings.STORAGES["default"]["OPTIONS"]
+#
+#     s3 = boto3.client(
+#         "s3",
+#         aws_access_key_id=options["access_key"],
+#         aws_secret_access_key=options["secret_key"],
+#         region_name=options.get("region_name", "ap-northeast-2"),
+#     )
+#     bucket = options["bucket_name"]
+#
+#     if not keys:
+#         return
+#
+#     objects = [{"Key": key} for key in keys]
+#
+#     s3.delete_objects(
+#         Bucket=bucket,
+#         Delete={"Objects": objects, "Quiet": True},
+#     )
+
+
+# boto3를 사용해 여러 항목 한번에 삭제하는 예시
+# import boto3
+# s3 = boto3.client("s3")
+# response = s3.delete_objects(
+#     Bucket="your-bucket-name",
+#     Delete={
+#         "Objects": [
+#             {"Key": "uploads/image1.jpg"},
+#             {"Key": "uploads/image2.jpg"},
+#             {"Key": "uploads/image3.jpg"},
+#         ],
+#         "Quiet": True,  # 응답에서 성공 항목을 생략할지 여부
+#     },
+# )

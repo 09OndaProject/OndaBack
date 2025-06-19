@@ -7,13 +7,13 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from apps.user.admin_serializers import (
+from apps.user.models import UserRole
+from apps.user.serializers.admin_serializers import (
     AdminUserCreateSerializer,
     AdminUserListSerializer,
     AdminUserProfileSerializer,
     AdminUserProfileUpdateSerializer,
 )
-from apps.user.models import UserRole
 from utils.pagination import CustomPageNumberPagination
 
 User = get_user_model()
