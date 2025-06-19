@@ -12,7 +12,7 @@ class PostImageSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     nickname = serializers.CharField(source="user.nickname", read_only=True)
     like_count = serializers.IntegerField(source="likes.count", read_only=True)
-    is_liked = serializers.SerializerMethodField()
+    # is_liked = serializers.SerializerMethodField()
     is_mine = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -30,21 +30,18 @@ class PostSerializer(serializers.ModelSerializer):
             "nickname",
             "is_mine",
             "like_count",
-            "is_liked",
+            #    "is_liked",
         ]
 
-        def get_is_mine(self, obj):
-            # context에 request가 있어야 함 (APIView에서 serializer에 전달됨)
-            request = self.context.get("request")
-            return (
-                request and request.user.is_authenticated and obj.user == request.user
-            )
+    def get_is_mine(self, obj):
+        request = self.context.get("request")
+        return request and request.user.is_authenticated and obj.user == request.user
 
-        def get_is_liked(self, obj):
-            request = self.context.get("request")
-            if not request or not request.user.is_authenticated:
-                return False
-            return obj.likes.filter(user=request.user).exists()
+    # def get_is_liked(self, obj):
+    #    request = self.context.get("request")
+    #    if not request or not request.user.is_authenticated:
+    #        return False
+    #    return obj.likes.filter(user=request.user).exists()
 
 
 class RecursiveField(serializers.Serializer):
@@ -81,6 +78,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "updated_at",
             "is_mine",
             "replies",
+            "post",
         )
 
     def get_is_mine(self, obj):
@@ -88,9 +86,10 @@ class CommentSerializer(serializers.ModelSerializer):
         return request and request.user.is_authenticated and obj.user == request.user
 
     def create(self, validated_data):
-        request = self.context.get("request")
-        user = request.user if request else None
-        return Comment.objects.create(user=user, **validated_data)
+        # user, post는 validated_data에서 빼고, 따로 set
+        user = validated_data.pop("user")
+        post = validated_data.pop("post")
+        return Comment.objects.create(user=user, post=post, **validated_data)
 
 
 class LikeSerializer(serializers.ModelSerializer):

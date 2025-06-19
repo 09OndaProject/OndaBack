@@ -77,6 +77,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             {
                 "type": "chat_message",
                 "user_id": user.id,
+                "nickname": user.nickname,
                 "message": content,
             },
         )
@@ -89,6 +90,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             text_data=json.dumps(
                 {
                     "user_id": event["user_id"],
+                    "nickname": event["nickname"],
                     "message": event["message"],
                 }
             )
