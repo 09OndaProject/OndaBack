@@ -1656,6 +1656,7 @@ s3 버킷 정책 설정
     ]
 }
 
+서버 직접 실행
 이렇게 실행시 서버 실행 오류 확인 가능
 gunicorn config.wsgi:application
 
@@ -1957,6 +1958,52 @@ https://websocketking.com/
 
 테스트 주소 입력
 ws://127.0.0.1:8000/ws/group-chat/1/?token=<JWT_ACCESS_TOKEN>
+wss://api.ondamoim.com/ws/group-chat/1/?token=<JWT_ACCESS_TOKEN>
+wss://api.ondamoim.com/ws/group-chat/1/?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwNDExNDM1LCJpYXQiOjE3NTA0MDc4MzUsImp0aSI6ImRhNTk4NDg5NGFjZDQ5N2ZiMWZiM2VhYWRhN2M0NGFlIiwidXNlcl9pZCI6NDgsImVtYWlsIjoiaGFtYUBleGFtcGxlLmNvbSIsIm5hbWUiOiJcdWQ1NThcdWI5YzgiLCJuaWNrbmFtZSI6Ilx1YWRjMFx1YzVlY1x1YzZiNFx1ZDU1OFx1YjljOCIsInByb3ZpZGVyIjoiaG9tZSIsInJvbGUiOiJsZWFkZXIifQ.xP43nuM-e6a6_lgtnUKZuhfNHFnYLcsGcay2JuFdwmE
+
+서버에 적용하기
+
+서버 설정 변경
+sudo vi /etc/systemd/system/gunicorn.service
+
+[Unit]
+Description=Gunicorn + UvicornWorker (Django ASGI)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/OndaBack
+ExecStart=/home/ubuntu/.pyenv/versions/onda/bin/gunicorn \
+        --access-logfile /var/log/gunicorn/access.log \
+        --error-logfile /var/log/gunicorn/error.log \
+        --log-level info \
+        --workers 3 \
+        --worker-class uvicorn.workers.UvicornWorker \
+        --bind unix:/srv/gunicorn/gunicorn.sock config.asgi:application
+Environment="DJANGO_SETTINGS_MODULE=config.settings"
+[Install]
+WantedBy=multi-user.target
+
+nginx 설정 추가
+sudo vi /etc/nginx/sites-available/django.conf
+    location /ws/ {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        include proxy_params;
+        proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+    }
+
+sudo systemctl daemon-reload
+sudo systemctl restart gunicorn.service
+sudo systemctl status gunicorn.service
+
+sudo systemctl reload nginx.service
+sudo systemctl status nginx.service
+
+
 
 -----------------------------
 drf_yasg 자동 스웨거 문서화 툴
@@ -2046,3 +2093,18 @@ class ExcludeAppsSchemaGenerator(OpenAPISchemaGenerator):
 SWAGGER_EXCLUDED_APPS = [
     # "apps.user.views",
 ]  # 제외할 앱 이름
+
+
+쿼리 파라미터로 JWT 전달이 위험한 이유
+문제점                     설명
+🌐 브라우저 히스토리에 남음   URL은 기록되기 때문에 노출 위험 있음
+📁 서버 로그에 노출 가능성    Nginx, 로드밸런서, 프록시 서버에 기록될 수 있음
+🔍 중간자 공격 대상         HTTPS를 쓰지 않으면 탈취 가능
+🔁 토큰 갱신 어려움         URL로 보낸 토큰은 자동 갱신 처리도 까다로움
+
+nginx 실시간 로그 확인
+access_log /var/log/nginx/access.log;
+error_log /var/log/nginx/error.log;
+
+gunicorn 로그 확인
+cat /var/log/gunicorn/error.log
