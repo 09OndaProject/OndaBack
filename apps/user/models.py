@@ -192,12 +192,16 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
 
     ############################################
 
-    def delete(self, using=None, keep_parents=False):
-        self.is_deleted = True
-        self.deleted_at = timezone.now()
-        self.email = f"{self.email}__deleted__{self.pk}"
-        self.nickname = f"{self.nickname}__deleted__{self.pk}"
-        self.save()
+    # 유저 삭제시 소프트 딜리트
+    def delete(self, soft=True, using=None, keep_parents=False):
+        if soft:
+            self.is_deleted = True
+            self.deleted_at = timezone.now()
+            self.email = f"{self.email}__deleted__{self.pk}"
+            self.nickname = f"{self.nickname}__deleted__{self.pk}"
+            self.save()
+        else:
+            super().delete(using=using, keep_parents=keep_parents)
 
 
 # @property
