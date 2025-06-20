@@ -3,11 +3,15 @@ import os
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from urllib.parse import urlparse
+from uuid import uuid4
 
+import requests
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.db import models
+from django.utils import timezone
 from PIL import Image as PilImage
 
 if settings.DJANGO_ENV == "prod":
@@ -24,13 +28,18 @@ else:
         location = "media"
 
 
-THUMBNAIL_SIZE = (500, 500)
-
-
 def upload_to(instance, filename):  # 인스턴스는 file모델. filename은 저장된 파일의 이름
-    sub_dir = instance.category if instance.category else "other"
+    category = instance.category if instance.category else "other"
     date_path = datetime.now().strftime("%Y/%m/%d")
-    return os.path.join(sub_dir, date_path, filename)
+    return f"{category}/origianl/{date_path}/{filename}"
+
+
+def thumbnail_upload_to(
+    instance, filename
+):  # 인스턴스는 file모델. filename은 저장된 파일의 이름
+    category = instance.category if instance.category else "other"
+    date_path = datetime.now().strftime("%Y/%m/%d")
+    return f"{category}/thumbnail/{date_path}/{filename}"
 
 
 class FileCategory(models.TextChoices):
@@ -47,23 +56,30 @@ FILE_TYPE_CHOICES = [
     ("file", "File"),
 ]
 
+THUMBNAIL_SIZE = (500, 500)
+
 
 class File(models.Model):
     user = models.ForeignKey(
-        "user.User", on_delete=models.CASCADE, related_name="files"
+        "user.User", on_delete=models.SET_NULL, null=True, related_name="files"
     )
     category = models.CharField(max_length=20, choices=FileCategory.choices, null=True)
-    file = models.FileField(storage=MediaStorage, upload_to=upload_to)
+    file = models.FileField(
+        storage=MediaStorage, upload_to=upload_to, blank=True, null=True
+    )
     file_type = models.CharField(
         max_length=10, choices=FILE_TYPE_CHOICES, blank=True, null=True
     )  # file, video, file
     file_name = models.CharField(max_length=255, blank=True, null=True)
     file_size = models.BigIntegerField(blank=True, null=True)
     thumbnail = models.ImageField(
-        blank=True, null=True, upload_to="upload/thumbnails/%Y/%m/%d/"
+        storage=MediaStorage, upload_to=thumbnail_upload_to, blank=True, null=True
     )
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.file_name
@@ -99,6 +115,26 @@ class File(models.Model):
     #     elif model == "post":
     #         return settings.DEFAULT_POST_THUMBNAIL_URL
     #     return settings.DEFAULT_THUMBNAIL_URL  # 예외 대비 fallback
+
+    def download_from_url(self, url):
+
+        filename = f"profile_{uuid4().hex}.jpeg"
+
+        try:
+            response = requests.get(url, stream=True, timeout=5)
+            response.raise_for_status()  # 실패 응답을 받을시 예외 발생
+
+            image_file = BytesIO(response.content)
+            image_file.seek(0)
+
+            temp_file = ContentFile(image_file.read(), name=filename)
+            self.file = temp_file
+
+            return True
+
+        except Exception as e:
+            print(f"[File.download_from_url] Failed: {e}")
+            return False
 
     def prepare(self, *, format="WEBP", quality=85, size=None):
         """파일 저장 전에 썸네일 생성, 파일 형식 변환 등 전처리"""
@@ -149,14 +185,22 @@ class File(models.Model):
             )
             temp_thumb.close()
 
-    def delete(self, *args, **kwargs):
-        print("delete1")
-        # 실제 파일이 존재하면 삭제
-        if self.file and os.path.isfile(self.file.path):
-            print("delete2")
-            self.file.delete(save=False)
-        # DB 레코드 삭제
-        super().delete(*args, **kwargs)
+    # 소프트 딜리트 후 주기적으로 한번에 삭제
+    # 다른 모델이 소프트 딜리트 시엔 파일 모델 영향없음
+    # 하드 딜리트 되면 실제 파일도 필요없음.
+    def delete(self, soft=True, using=None, keep_parents=False):
+        if soft:
+            self.is_deleted = True
+            self.deleted_at = timezone.now()
+            self.save()
+        else:
+            # 실제 파일이 존재하면 삭제
+            if self.file and os.path.isfile(self.file.path):
+                self.file.delete(save=False)
+            if self.thumbnail and os.path.isfile(self.thumbnail.path):
+                self.thumbnail.delete(save=False)
+            # DB 레코드 삭제
+            super().delete(using=using, keep_parents=keep_parents)
 
 
 def get_file_type(file_name: str) -> str:
