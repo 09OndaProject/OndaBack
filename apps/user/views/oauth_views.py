@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from urllib.parse import unquote, urlencode
 
 import requests
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import signing
+from django.core.files import File
 from django.core.signing import BadSignature
 from django.middleware.csrf import get_token
 from django.shortcuts import redirect
@@ -15,6 +15,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.upload.models import File, FileCategory
 from apps.user.models import Provider
 from apps.user.utils.jwt_token import get_tokens_for_user, set_refresh_token_cookie
 from apps.user.utils.oauth_mixins import (
@@ -128,7 +129,9 @@ class OAuthCallbackView(APIView, ABC):
 
         # 프로필 요청
         profile_data = self.get_profile(access_token, provider_info)
-        email, name, nickname = self.get_user_data(profile_data, provider_info)
+        email, name, nickname, profile_image = self.get_user_data(
+            profile_data, provider_info
+        )
 
         if not email:
             return Response({"detail": "이메일을 가져올 수 없습니다."}, status=400)
@@ -142,6 +145,31 @@ class OAuthCallbackView(APIView, ABC):
             user.nickname = nickname
             user.set_password(User.objects.make_random_password())
             user.is_active = True
+
+            # 프로필 이미지가 있으면 다운로드하여 저장
+            if profile_image and not user.file:
+
+                # File 모델 인스턴스 생성
+                file_instance = File(
+                    user=user,
+                    category=FileCategory.PROFILE,
+                )
+
+                if file_instance.download_from_url(profile_image):
+
+                    # 파일 전처리
+                    file_instance.prepare(
+                        format=request.data.get("format", "webp").upper(),
+                        quality=int(request.data.get("quality", 85)),
+                        size=int(request.data.get("size", 500)) or None,
+                    )
+
+                # 파일 저장
+                file_instance.save()
+
+                # 사용자 프로필 이미지로 설정
+                user.file = file_instance
+
             user.save()
 
         # JWT 토큰 발급
@@ -229,14 +257,16 @@ class OAuthCallbackView(APIView, ABC):
             email = profile_data.get(provider_info["email_field"])
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
-            return email, name, nickname
+            profile_image = profile_data.get(provider_info["profile_image_field"], "")
+            return email, name, nickname, profile_image
 
         elif provider_info["provider"] == Provider.NAVER:  # 네이버
             profile_data = profile_data.get("response", {})
             email = profile_data.get(provider_info["email_field"])
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
-            return email, name, nickname
+            profile_image = profile_data.get(provider_info["profile_image_field"], "")
+            return email, name, nickname, profile_image
 
         elif provider_info["provider"] == Provider.KAKAO:  # 카카오
             account_data = profile_data.get("kakao_account", {})
@@ -244,7 +274,8 @@ class OAuthCallbackView(APIView, ABC):
             profile_data = account_data.get("profile", {})
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
-            return email, name, nickname
+            profile_image = profile_data.get(provider_info["profile_image_field"], "")
+            return email, name, nickname, profile_image
 
 
 # 카카오 로그인
