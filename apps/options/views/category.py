@@ -7,7 +7,7 @@ from apps.options.models.category import Category
 from apps.options.serializers.category import CategorySerializer
 
 
-@method_decorator(cache_page(60 * 60, key_prefix="category_list"), name="dispatch")
+@method_decorator(cache_page(60 * 60 * 24, key_prefix="category_list"), name="dispatch")
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer

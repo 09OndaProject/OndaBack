@@ -9,7 +9,7 @@ from apps.options.models.area import Area
 from apps.options.serializers.area import AreaSerializer, AreaSimpleSerializer
 
 
-@method_decorator(cache_page(60 * 60, key_prefix="area_list"), name="dispatch")
+@method_decorator(cache_page(60 * 60 * 24, key_prefix="area_list"), name="dispatch")
 class AreaListView(APIView):
 
     @swagger_auto_schema(
