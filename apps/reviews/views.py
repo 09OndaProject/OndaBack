@@ -7,18 +7,17 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import MethodNotAllowed, ValidationError
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from apps.meet.models import Meet, MeetApply
+from utils.pagination import CustomPageNumberPagination
 
 from .models import Review
 from .permissions import IsOwnerOrReadOnlyWithin7Days
 from .serializers import ReviewCreateSerializer, ReviewDisplaySerializer
 
 
-# 페이지네이션 설정
-class ReviewPagination(PageNumberPagination):
+class ReviewPagination(CustomPageNumberPagination):
     page_size = 6
 
 
