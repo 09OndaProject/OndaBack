@@ -19,7 +19,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        # URL에서 room_id 추출 → 그룹 이름 지정
+        # URL에서 room_id 추출 -> 그룹 이름 지정
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
         self.room_group_name = f"chat_{self.room_id}"
 

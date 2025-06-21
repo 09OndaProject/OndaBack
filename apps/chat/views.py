@@ -4,8 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.chat.models import GroupChatMembership, GroupChatRoom
+from apps.chat.models import GroupChatMembership, GroupChatMessage, GroupChatRoom
 from apps.meet.models import Meet, MeetApply
+
+from .serializers import GroupChatMessageSerializer
 
 
 class JoinGroupChatView(APIView):
@@ -33,3 +35,25 @@ class JoinGroupChatView(APIView):
             {"room_id": room.id, "message": "채팅방에 입장했습니다."},
             status=status.HTTP_200_OK,
         )
+
+
+class GroupChatMessageListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, room_id):
+        # 1. 채팅방 유효성 검사
+        room = get_object_or_404(GroupChatRoom, id=room_id)
+
+        # 2. 채팅방 멤버인지 확인
+        if not GroupChatMembership.objects.filter(
+            room=room, user=request.user
+        ).exists():
+            return Response(
+                {"detail": "접근 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 3. 메시지 목록 조회
+        messages = GroupChatMessage.objects.filter(room=room).order_by("created_at")
+        serializer = GroupChatMessageSerializer(messages, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
