@@ -7,7 +7,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    "13.209.4.19",
+    "13.209.72.164",
     "onda.n-e.kr",
     "api.ondamoim.com",
 ]  # EC2 퍼블릭 IP
