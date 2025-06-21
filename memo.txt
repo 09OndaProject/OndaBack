@@ -953,7 +953,7 @@ class CustomCSRFMiddleware:
 -----------------------------
 Ubuntu 서버에서 CI/CD 사용해 배포 설정하기
 -----------------------------
-ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.4.19
+ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.72.164
 chmod 400 ~/Downloads/onda-key-aws.pem
 
 mv ~/Downloads/wistar.pem ~/.ssh

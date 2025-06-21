@@ -1,5 +1,5 @@
-from chat.models import GroupChatMembership, GroupChatRoom
-from meet.models import MeetApply
+from apps.chat.models import GroupChatMembership, GroupChatRoom
+from apps.meet.models import MeetApply
 
 
 #  채팅방이 없는 경우 새로 만들고, 해당 유저를 참여자로 추가하는 로직
