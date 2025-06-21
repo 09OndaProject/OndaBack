@@ -7,13 +7,13 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from apps.user.admin_serializers import (
+from apps.user.models import UserRole
+from apps.user.serializers.admin_serializers import (
     AdminUserCreateSerializer,
     AdminUserListSerializer,
     AdminUserProfileSerializer,
     AdminUserProfileUpdateSerializer,
 )
-from apps.user.models import UserRole
 from utils.pagination import CustomPageNumberPagination
 
 User = get_user_model()
@@ -85,6 +85,12 @@ class AdminUserViewSet(ModelViewSet):
                 except KeyError:
                     pass
 
+            if is_deleted := query.get("is_deleted"):
+                is_deleted = True if is_deleted.lower() == "true" else False
+                q &= Q(is_deleted=is_deleted)
+            else:
+                q &= Q(is_deleted=False)
+
             return queryset.filter(q).order_by("-created_at")
 
         elif self.action == "retrieve":
@@ -144,6 +150,12 @@ class AdminUserViewSet(ModelViewSet):
                 openapi.IN_QUERY,
                 description="디지털 레벨 ID",
                 type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "is_deleted",
+                openapi.IN_QUERY,
+                description="삭제된 사용자 표시",
+                type=openapi.TYPE_STRING,
             ),
         ],
     )

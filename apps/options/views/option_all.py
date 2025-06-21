@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -11,6 +13,7 @@ from apps.options.serializers.digital_level import DigitalLevelSerializer
 from apps.options.serializers.interest import InterestSerializer
 
 
+@method_decorator(cache_page(60 * 60 * 24, key_prefix="option_all"), name="dispatch")
 class OptionAllView(APIView):
     @swagger_auto_schema(
         operation_summary="전체 옵션 목록 조회",
@@ -23,23 +26,54 @@ class OptionAllView(APIView):
                     properties={
                         "categories": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
-                            items=openapi.Items(type=openapi.TYPE_OBJECT),
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
                         ),
                         "areas": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
-                            items=openapi.Items(type=openapi.TYPE_OBJECT),
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "depth": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
                         ),
                         "interests": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
-                            items=openapi.Items(type=openapi.TYPE_OBJECT),
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
                         ),
                         "digital_levels": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
-                            items=openapi.Items(type=openapi.TYPE_OBJECT),
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
                         ),
                         "age_groups": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
-                            items=openapi.Items(type=openapi.TYPE_OBJECT),
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
                         ),
                     },
                 ),

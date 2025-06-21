@@ -1,5 +1,9 @@
 import json
+import logging
+import os
 
+import boto3
+from django.conf import settings
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -15,6 +19,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import File
 from .serializers import FileSerializer
+
+logger = logging.getLogger(__name__)
 
 
 # listview test
@@ -131,13 +137,98 @@ class FileDeleteView(DestroyModelMixin, GenericAPIView):
             return Response({"detail": "List of IDs expected."}, status=400)
 
         files = File.objects.filter(id__in=ids)
+        deleted_count = files.count()
 
-        deleted_count = 0
-        for file in files:
-            file.delete()
-            deleted_count += 1
+        if settings.DJANGO_ENV == "prod":
+            # S3 클라이언트 초기화
+            s3_client = boto3.client(
+                "s3",
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME,
+            )
+
+            # S3 버킷 이름
+            bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+
+            # 삭제할 파일 키 목록
+            delete_objects = []
+
+            # 파일과 썸네일의 S3 키 수집
+            for file in files:
+                if file.file:
+                    file_key = file.file.name
+                    delete_objects.append({"Key": file_key})
+
+                if file.thumbnail:
+                    thumbnail_key = file.thumbnail.name
+                    delete_objects.append({"Key": thumbnail_key})
+
+            # S3에서 일괄 삭제 (최대 1000개까지 한 번에 삭제 가능)
+            if delete_objects:
+                # 1000개씩 나누어서 처리
+                for i in range(0, len(delete_objects), 1000):
+                    try:
+                        s3_client.delete_objects(
+                            Bucket=bucket_name,
+                            Delete={"Objects": delete_objects[i : i + 1000]},
+                        )
+                    except Exception as e:
+                        logger.exception("S3 삭제 중 오류 발생")
+        else:
+            for file in files:
+                # 파일 시스템에서 실제 파일들 삭제
+                # 필드가 존재하고 실제 파일이 있는 경우에만 삭제
+                if file.file and os.path.isfile(file.file.path):
+                    file.file.delete(save=False)
+
+                if file.thumbnail and os.path.isfile(file.thumbnail.path):
+                    file.thumbnail.delete(save=False)
+
+        # 데이터베이스에서 한 번에 삭제
+        files.delete()
 
         return Response(
             {"message": "삭제 성공", "deleted_count": deleted_count},
             status=status.HTTP_200_OK,
         )
+
+
+# def bulk_delete_s3_files(file_queryset):
+#     keys = [{"Key": file.file.name} for file in file_queryset if file.file.name]
+#
+#     options = settings.STORAGES["default"]["OPTIONS"]
+#
+#     s3 = boto3.client(
+#         "s3",
+#         aws_access_key_id=options["access_key"],
+#         aws_secret_access_key=options["secret_key"],
+#         region_name=options.get("region_name", "ap-northeast-2"),
+#     )
+#     bucket = options["bucket_name"]
+#
+#     if not keys:
+#         return
+#
+#     objects = [{"Key": key} for key in keys]
+#
+#     s3.delete_objects(
+#         Bucket=bucket,
+#         Delete={"Objects": objects, "Quiet": True},
+#     )
+
+
+# boto3를 사용해 여러 항목 한번에 삭제하는 예시
+# import boto3
+# s3 = boto3.client("s3")
+# response = s3.delete_objects(
+#     Bucket="your-bucket-name",
+#     Delete={
+#         "Objects": [
+#             {"Key": "uploads/image1.jpg"},
+#             {"Key": "uploads/image2.jpg"},
+#             {"Key": "uploads/image3.jpg"},
+#         ],
+#         "Quiet": True,  # 응답에서 성공 항목을 생략할지 여부
+#     },
+# )

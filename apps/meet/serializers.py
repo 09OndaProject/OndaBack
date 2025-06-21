@@ -63,6 +63,7 @@ class MeetCreateSerializer(serializers.ModelSerializer):
 class MeetListSerializer(serializers.ModelSerializer):
     status = serializers.ReadOnlyField()
     area = serializers.CharField(source="area.full_path", read_only=True)
+    file = FileSerializer(read_only=True)
     leader_nickname = serializers.CharField(source="user.nickname", read_only=True)
     leader_image = serializers.SerializerMethodField()
 
@@ -83,6 +84,7 @@ class MeetListSerializer(serializers.ModelSerializer):
             "current_people",
             "application_deadline",
             "status",
+            "file",
             "session_count",
             "leader_nickname",
             "leader_image",
@@ -92,6 +94,7 @@ class MeetListSerializer(serializers.ModelSerializer):
 class MeetUserListSerializer(serializers.ModelSerializer):
     status = serializers.ReadOnlyField()
     area = serializers.CharField(source="area.full_path", read_only=True)
+    file = FileSerializer(read_only=True)
 
     class Meta:
         model = Meet
@@ -101,6 +104,7 @@ class MeetUserListSerializer(serializers.ModelSerializer):
             "description",
             "area",
             "date",
+            "file",
             "max_people",
             "current_people",
             "application_deadline",

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 # 이메일 보낼 때 SSL 인증서 경로 인식 불가 시 설정
 import os
+import random
 from datetime import timedelta
 from pathlib import Path
 
@@ -25,8 +26,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ENV = dotenv_values(BASE_DIR / "envs/.env")
 # ENV = dotenv_values(BASE_DIR / "envs/.env.prod")  # 배포 환경 테스트
 
-if ENV.get("DJANGO_ENV", "local") == "local":
+DJANGO_ENV = ENV.get("DJANGO_ENV", "local")
+if DJANGO_ENV == "local":
     os.environ["SSL_CERT_FILE"] = certifi.where()
+
+# 시크릿 키를 ENV 변수에 저장된 딕셔너리에서 가져옵니다. 만약 파일에서 읽어온 시크릿 키가 존재하지 않는다면 50자리의 무작위 문자열을 반환합니다.
+SECRET_KEY = ENV.get(
+    "DJANGO_SECRET_KEY",
+    "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()?", k=50)),
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -86,7 +94,9 @@ MIDDLEWARE = [
 # 프론트 도메인 등록
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
+    "http://127.0.0.1:8000",
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "http://localhost:5173",
     "https://onda-develop-868p.vercel.app",
     "https://www.ondamoim.com",
@@ -110,18 +120,6 @@ CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "config.urls"
 
-# Redis 설정
-ASGI_APPLICATION = "config.asgi.application"
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
-}
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -139,6 +137,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# Redis 설정
+ASGI_APPLICATION = "config.asgi.application"
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -172,7 +182,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",  # 숫자만으로 구성된 비밀번호 거부
     },
     {
-        "NAME": "apps.user.utils.custom_password_validation.NoKoreanPasswordValidator",  # 한글 입력 거부 커스텀
+        "NAME": "apps.user.utils.validation.NoKoreanPasswordValidator",  # 한글 입력 거부 커스텀
     },
 ]
 
@@ -231,7 +241,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     # It will work instead of the default serializer(TokenObtainPairSerializer).
-    "TOKEN_OBTAIN_SERIALIZER": "apps.user.utils.jwt_serializers.OndaTokenObtainPairSerializer",
+    "TOKEN_OBTAIN_SERIALIZER": "apps.user.serializers.jwt_serializers.OndaTokenObtainPairSerializer",
     # ...
 }
 
@@ -255,3 +265,31 @@ SWAGGER_SETTINGS = {
         }
     },
 }
+
+
+# Email
+# from django.core.mail.backends.smtp import EmailBackend
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # 개발/테스트용
+EMAIL_HOST = "smtp.naver.com"  # 네이버 환결설정에서 볼 수 있음.
+EMAIL_USE_TLS = True  # 보안연결
+EMAIL_PORT = 587  # 네이버 메일 환경설정에서 확인 가능
+EMAIL_HOST_USER = ENV.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = ENV.get("EMAIL_HOST_PASSWORD", "")
+
+
+# OAuth
+KAKAO_REST_API_KEY = ENV.get("KAKAO_REST_API_KEY", "")
+KAKAO_CLIENT_SECRET = ENV.get("KAKAO_CLIENT_SECRET", "")
+
+
+# # 기본 이미지 url 설정
+# BASE_STATIC_URL = STATIC_URL + "images/"
+# # 기본 프로필 이미지 url 설정
+# DEFAULT_PROFILE_URL = BASE_STATIC_URL + "default_profile.webp"
+# DEFAULT_PROFILE_THUMBNAIL_URL = BASE_STATIC_URL + "default_profile_thumb.webp"
+# # 기본 게시글 이미지 url 설정
+# DEFAULT_POST_URL = BASE_STATIC_URL + "default_post.webp"
+# DEFAULT_POST_THUMBNAIL_URL = BASE_STATIC_URL + "default_post_thumb.webp"
+# # 기본 이미지 url 설정
+# DEFAULT_THUMBNAIL_URL = BASE_STATIC_URL + "default_thumb.webp"  # 예외 대비

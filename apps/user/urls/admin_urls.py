@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .admin_views import AdminUserViewSet
+from apps.user.views.admin_views import AdminUserViewSet
 
 router = DefaultRouter(trailing_slash=False)
 

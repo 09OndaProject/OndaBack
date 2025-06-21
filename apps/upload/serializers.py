@@ -1,7 +1,4 @@
-from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
-from rest_framework.serializers import raise_errors_on_nested_writes
-from rest_framework.utils import model_meta
 
 from .models import File
 
@@ -13,6 +10,7 @@ class FileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "user_id",
+            "category",
             "file",
             "file_type",
             "file_name",
@@ -38,7 +36,11 @@ class FileSerializer(serializers.ModelSerializer):
 
             for upload_file in request.FILES.getlist("file"):
                 print("uploading file", upload_file)
-                file = File(file=upload_file, user=request.user)
+                file = File(
+                    file=upload_file,
+                    user=request.user,
+                    category=validated_data.get("category").lower(),
+                )
                 file.prepare(
                     format=request.data.get("format", "webp").upper(),
                     quality=int(request.data.get("quality", 85)),

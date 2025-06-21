@@ -7,7 +7,9 @@ from apps.options.models.digital_level import DigitalLevel
 from apps.options.serializers.digital_level import DigitalLevelSerializer
 
 
-@method_decorator(cache_page(60 * 60, key_prefix="digital_level_list"), name="dispatch")
+@method_decorator(
+    cache_page(60 * 60 * 24, key_prefix="digital_level_list"), name="dispatch"
+)
 class DigitalLevelListView(generics.ListAPIView):
     queryset = DigitalLevel.objects.all()
     serializer_class = DigitalLevelSerializer
