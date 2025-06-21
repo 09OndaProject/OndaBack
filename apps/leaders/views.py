@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import ValidationError
 
 from apps.leaders.models import LeaderApplication
 from apps.leaders.serializers import (
