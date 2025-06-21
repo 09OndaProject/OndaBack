@@ -14,26 +14,46 @@ User = get_user_model()
 @receiver(pre_delete, sender=LeaderApplication)
 @receiver(post_delete, sender=Meet)
 def auto_delete_file_if_unused(sender, instance, **kwargs):
+    files_to_check = []
 
     if sender == User or sender == Meet:
-        file = instance.file
-    elif sender == Post and instance.post_image:
-        file = instance.post_image.file
-    elif sender == LeaderApplication and instance.leader_certificate:
-        file = instance.leader_certificate.file
+        if instance.file:
+            files_to_check.append(instance.file)
 
-    is_used_elsewhere = any(
-        [
-            User.objects.filter(file=file).exists(),
-            PostImage.objects.filter(file=file).exists(),
-            LeaderCertificate.objects.filter(file=file).exists(),
-            Meet.objects.filter(file=file).exists(),
-        ]
-    )
+    elif sender == Post:
+        # Post가 삭제되기 전 관련 PostImage 객체에서 파일 수집
+        related_files = PostImage.objects.filter(post=instance)
+        for file in related_files:
+            files_to_check.append(file.file)
 
-    if not is_used_elsewhere:
-        # file.file.delete(save=False)  # 실제 파일 삭제
-        file.delete()  # File 모델 소프트 딜리트 후 모아서 처리
+    elif sender == LeaderApplication:
+        # LeaderApplication가 삭제되기 전 관련 LeaderCertificate 객체에서 파일 수집
+        related_files = LeaderCertificate.objects.filter(leader_application=instance)
+        for file in related_files:
+            files_to_check.append(file.file)
+
+    # 각각의 파일이 다른 모델에서도 사용 중인지 확인하고 미사용이면 삭제
+    for file in files_to_check:
+        file_ids = [f.id for f in files_to_check]
+
+        # 참조 중인 file id들을 한 번에 모두 조회
+        used_file_ids = set().union(
+            User.objects.filter(file_id__in=file_ids).values_list("file_id", flat=True),
+            PostImage.objects.filter(file_id__in=file_ids).values_list(
+                "file_id", flat=True
+            ),
+            LeaderCertificate.objects.filter(file_id__in=file_ids).values_list(
+                "file_id", flat=True
+            ),
+            Meet.objects.filter(file_id__in=file_ids).values_list("file_id", flat=True),
+        )
+
+        # 실제로 삭제 대상인 파일만 추리기
+        unused_files = [f for f in files_to_check if f.id not in used_file_ids]
+
+        if file in unused_files:
+            # file.file.delete(save=False)  # 실제 파일 삭제
+            file.delete()  # File 모델 소프트 딜리트 후 모아서 처리
 
 
 # 모델의 삭제 동작 시그널 발생
