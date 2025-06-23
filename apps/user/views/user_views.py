@@ -38,6 +38,7 @@ from apps.user.serializers.user_serializers import (
     RegisterSerializer,
 )
 from apps.user.utils.jwt_token import modify_access_token, set_refresh_token_cookie
+from utils.email import send_email
 
 User = get_user_model()
 
@@ -101,9 +102,9 @@ class RegisterView(CreateAPIView):
 
         verify_url = f"{request.scheme}://{request.get_host()}/api/users/verify/email?code={signed_code}"
 
-        # subject = "[Onda] 이메일 인증을 완료해주세요."
-        # message = f"아래 링크를 클릭해 인증을 완료해주세요.\n\n{verify_url}"
-        # send_email(subject, message, user.email)
+        subject = "[Onda] 이메일 인증을 완료해주세요."
+        message = f"아래 링크를 클릭해 인증을 완료해주세요.\n\n{verify_url}"
+        send_email(subject, message, user.email)
 
         response_data = serializer.data
 
