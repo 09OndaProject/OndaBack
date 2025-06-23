@@ -357,7 +357,7 @@ class LogoutAPIView(APIView):
 
 
 # 엑세스 토큰 리프레시
-@method_decorator(csrf_protect, name="dispatch")
+# @method_decorator(csrf_protect, name="dispatch")
 class CustomTokenRefreshView(APIView):
     @swagger_auto_schema(
         tags=["유저"],
@@ -433,7 +433,7 @@ class CustomTokenRefreshView(APIView):
         )  # 토큰에 유저 정보 추가
 
         # 새로운 커스텀 CSRF 토큰 발급 (선택)
-        new_csrf_token = get_token(request=request)
+        # new_csrf_token = get_token(request=request)
 
         # 새로운 리프레시 토큰이 있다면 (ROTATE 설정 시)
         new_refresh_token = serializer.validated_data.get("refresh")
@@ -442,7 +442,7 @@ class CustomTokenRefreshView(APIView):
         custom_response = {
             "message": "액세스 토큰이 재발급되었습니다.",
             "access_token": new_access_token,
-            "csrf_token": new_csrf_token,
+            # "csrf_token": new_csrf_token,
         }
 
         # 최종 응답
