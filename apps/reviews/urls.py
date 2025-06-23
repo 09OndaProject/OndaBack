@@ -1,11 +1,11 @@
 from django.urls import path
 
 from .views import (
+    LeaderReviewListView,
+    MyReviewListView,
     ReviewDetailView,
     ReviewListCreateView,
     ReviewSummaryView,
-    MyReviewListView,
-    LeaderReviewListView,
 )
 
 urlpatterns = [

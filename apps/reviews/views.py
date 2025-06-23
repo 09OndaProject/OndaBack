@@ -223,6 +223,7 @@ class MyReviewListView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
+
 # 내가 리더인 모임에 달린 리뷰 목록 조회
 class LeaderReviewListView(generics.ListAPIView):
     serializer_class = ReviewDisplaySerializer
