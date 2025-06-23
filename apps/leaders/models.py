@@ -27,7 +27,7 @@ class LeaderApplication(models.Model):
     )
     bio = models.TextField(verbose_name="자기소개")  # 사용자가 작성한 자기소개
     certificate_type = models.JSONField(
-        verbose_name="자격증 종류"
+        null=True, blank=True, verbose_name="자격증 종류"
     )  # 여러 자격증 종류 저장 가능 (리스트 형태)
 
     # 신청 상태 (대기중, 승인됨, 거절됨 중 하나)
