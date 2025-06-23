@@ -101,10 +101,8 @@ class LeaderApplicationDetailSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_name = serializers.CharField(source="user.name", read_only=True)
     user_phone = serializers.CharField(source="user.phone_number", read_only=True)
-    user_birthdate = serializers.DateField(source="user.birthdate", read_only=True)
-    user_interests = serializers.StringRelatedField(
-        source="user.interest", many=True, read_only=True
-    )
+    user_birthdate = serializers.DateField(source="user.date_of_birth", read_only=True)
+    user_interests = serializers.StringRelatedField(source="user.interests", many=True, read_only=True)
     user_profile_image = serializers.SerializerMethodField()
     certificates = LeaderCertificateReadSerializer(many=True, read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
