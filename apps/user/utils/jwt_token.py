@@ -44,10 +44,10 @@ def set_refresh_token_cookie(response, refresh_token, request):
         # False: 로컬 개발 환경에 맞춰서 설정 True: HTTPS 환경에서만 전송
         secure=is_prod,
         # samesite="Lax",  # CSRF 공격 방지 설정
-        samesite="None",  # CSRF 공격 방지 설정
+        samesite="None",  # 다른 사이트 허용
         path="/api/users/token",  # 필요한 경로에만 쿠키 사용
         domain=(
-            "api.ondamoim.com" if is_prod else "127.0.0.1"
+            ".ondamoim.com" if is_prod else None
         ),  # 특정 도메인에만 쿠키 사용
         max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)
     )
