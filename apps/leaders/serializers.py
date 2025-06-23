@@ -22,12 +22,17 @@ class LeaderCertificateWriteSerializer(serializers.ModelSerializer):
 # 관리자 또는 사용자가 자격증 상세정보를 볼 때 사용
 # 파일 정보를 FileSerializer 전체로 반환함
 class LeaderCertificateReadSerializer(serializers.ModelSerializer):
-    file_url = FileSerializer()  # 파일 전체 정보 반환 (이름, 크기, 썸네일 등)
+    file_url = serializers.SerializerMethodField()  # 파일 전체 정보 반환 (이름, 크기, 썸네일 등)
 
     class Meta:
         model = LeaderCertificate
         fields = ["certificate_type", "file_url"]  # 자격증 유형 + 파일 정보 전체
 
+    def get_file_url(self, obj):
+        # 파일이 존재하면 URL 반환, 없으면 None
+        if obj.file and obj.file.file:
+            return obj.file.file.url
+        return None
 
 # 리더 신청 생성 Serializer
 # 사용자가 리더 신청서를 보낼 때 사용
