@@ -322,10 +322,10 @@ class MeetLeaderListView(generics.ListAPIView):
         return queryset
 
 
-# /api/meets/users/{user_id} [GET]
+# /api/meets/users [GET]
 class MeetUserListView(generics.ListAPIView):
     serializer_class = MeetUserListSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         tags=["모임"],
@@ -336,7 +336,7 @@ class MeetUserListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        user_id = self.kwargs.get("user_id")
+        user_id = self.request.user.id
         queryset = (
             Meet.objects.filter(applications__user_id=user_id)
             .select_related("area", "file")
