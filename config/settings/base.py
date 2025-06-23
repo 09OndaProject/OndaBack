@@ -137,8 +137,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# Redis 설정
+# 비동기 서버 사용을 위한 Django ASGI 애플리케이션 경로 설정
 ASGI_APPLICATION = "config.asgi.application"
+
+# 장고가 '현재 요청이 HTTPS로 왔는지 여부를 판단할 수 있도록 도와주는 설정
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 CHANNEL_LAYERS = {
@@ -232,6 +234,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "utils.pagination.CustomPageNumberPagination",
 }
+
+# CSRF 토큰 설정
+CSRF_COOKIE_DOMAIN = ".ondamoim.com"
+CSRF_COOKIE_SAMESITE = 'Strict'
+CSRF_COOKIE_SECURE = True
 
 # JWT 설정
 SIMPLE_JWT = {
