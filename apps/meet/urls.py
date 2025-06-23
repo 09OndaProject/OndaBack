@@ -14,6 +14,6 @@ urlpatterns = [
         name="leader-meet-list",
     ),
     path(
-        "meets/users/<int:user_id>", MeetUserListView.as_view(), name="user-meet-list"
+        "meets/users", MeetUserListView.as_view(), name="user-meet-list"
     ),
 ]
