@@ -22,7 +22,9 @@ class LeaderCertificateWriteSerializer(serializers.ModelSerializer):
 # 관리자 또는 사용자가 자격증 상세정보를 볼 때 사용
 # 파일 정보를 FileSerializer 전체로 반환함
 class LeaderCertificateReadSerializer(serializers.ModelSerializer):
-    file_url = serializers.SerializerMethodField()  # 파일 전체 정보 반환 (이름, 크기, 썸네일 등)
+    file_url = (
+        serializers.SerializerMethodField()
+    )  # 파일 전체 정보 반환 (이름, 크기, 썸네일 등)
 
     class Meta:
         model = LeaderCertificate
@@ -34,10 +36,12 @@ class LeaderCertificateReadSerializer(serializers.ModelSerializer):
             return obj.file.file.url
         return None
 
+
 # 리더 신청 생성 Serializer
 # 사용자가 리더 신청서를 보낼 때 사용
 # 자격증(certificates)은 여러 개 받을 수 있음
 class LeaderApplicationCreateSerializer(serializers.ModelSerializer):
+    certificate_type = serializers.JSONField(required=False)
     certificates = LeaderCertificateWriteSerializer(
         many=True
     )  # 자격증 여러 개 입력 가능
@@ -48,8 +52,7 @@ class LeaderApplicationCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]  # id는 자동 생성되므로 읽기 전용
 
     def validate(self, data):
-        # certificate_type 필수 검사
-        if not data.get("certificate_type"):
+        if "certificate_type" not in data:
             raise serializers.ValidationError(
                 {"certificate_type": "자격증 종류를 선택해주세요."}
             )
@@ -98,9 +101,12 @@ class LeaderApplicationDetailSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_name = serializers.CharField(source="user.name", read_only=True)
     user_phone = serializers.CharField(source="user.phone_number", read_only=True)
-    certificates = LeaderCertificateReadSerializer(
-        many=True, read_only=True
-    )  # 첨부된 자격증 전체 표시
+    user_birthdate = serializers.DateField(source="user.birthdate", read_only=True)
+    user_interests = serializers.StringRelatedField(
+        source="user.interest", many=True, read_only=True
+    )
+    user_profile_image = serializers.SerializerMethodField()
+    certificates = LeaderCertificateReadSerializer(many=True, read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
@@ -110,6 +116,9 @@ class LeaderApplicationDetailSerializer(serializers.ModelSerializer):
             "user_email",
             "user_name",
             "user_phone",
+            "user_birthdate",
+            "user_interests",
+            "user_profile_image",
             "bio",
             "certificate_type",
             "certificates",
@@ -117,6 +126,15 @@ class LeaderApplicationDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def get_user_profile_image(self, obj):
+        file_obj = getattr(obj.user, "file", None)
+        if file_obj and file_obj.file:
+            return {
+                "original": file_obj.file.url,
+                "thumbnail": file_obj.thumbnail.url if file_obj.thumbnail else None,
+            }
+        return None
 
 
 # 리더 신청 상태 변경 Serializer
