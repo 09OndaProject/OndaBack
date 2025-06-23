@@ -4,6 +4,8 @@ from .views import (
     ReviewDetailView,
     ReviewListCreateView,
     ReviewSummaryView,
+    MyReviewListView,
+    LeaderReviewListView,
 )
 
 urlpatterns = [
@@ -18,4 +20,6 @@ urlpatterns = [
         name="review-summary",
     ),
     path("reviews/<int:pk>", ReviewDetailView.as_view(), name="review-detail"),
+    path("users/reviews", MyReviewListView.as_view(), name="my-review-list"),
+    path("reviews/my-meet", LeaderReviewListView.as_view(), name="leader-review-list"),
 ]

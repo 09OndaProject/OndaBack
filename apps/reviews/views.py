@@ -11,6 +11,7 @@ from rest_framework.response import Response
 
 from apps.meet.models import Meet, MeetApply
 from utils.pagination import CustomPageNumberPagination
+from utils.permissions import LeaderOnly
 
 from .models import Review
 from .permissions import IsOwnerOrAdminOrReadOnlyWithin7Days
@@ -216,6 +217,27 @@ class MyReviewListView(generics.ListAPIView):
 
     @swagger_auto_schema(
         operation_summary="내가 작성한 리뷰 목록 조회",
+        tags=["리뷰 API"],
+        responses={200: ReviewDisplaySerializer(many=True)},
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+# 내가 리더인 모임에 달린 리뷰 목록 조회
+class LeaderReviewListView(generics.ListAPIView):
+    serializer_class = ReviewDisplaySerializer
+    permission_classes = [permissions.IsAuthenticated, LeaderOnly]  # 🔥 수정
+    pagination_class = ReviewPagination
+
+    def get_queryset(self):
+        return (
+            Review.objects.select_related("user", "meet")
+            .filter(meet__user=self.request.user, meet__is_deleted=False)
+            .order_by("-created_at")
+        )
+
+    @swagger_auto_schema(
+        operation_summary="내가 리더인 모임에 달린 리뷰 목록 조회",
         tags=["리뷰 API"],
         responses={200: ReviewDisplaySerializer(many=True)},
     )
