@@ -13,7 +13,7 @@ from apps.meet.models import Meet, MeetApply
 from utils.pagination import CustomPageNumberPagination
 
 from .models import Review
-from .permissions import IsOwnerOrReadOnlyWithin7Days
+from .permissions import IsOwnerOrAdminOrReadOnlyWithin7Days
 from .serializers import ReviewCreateSerializer, ReviewDisplaySerializer
 
 
@@ -160,7 +160,7 @@ class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ReviewDisplaySerializer
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
-        IsOwnerOrReadOnlyWithin7Days,
+        IsOwnerOrAdminOrReadOnlyWithin7Days,
     ]
 
     @swagger_auto_schema(operation_summary="리뷰 상세 조회", tags=["리뷰 API"])
