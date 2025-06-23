@@ -236,9 +236,10 @@ REST_FRAMEWORK = {
 }
 
 # CSRF 토큰 설정
-CSRF_COOKIE_DOMAIN = ".ondamoim.com"
-CSRF_COOKIE_SAMESITE = "Strict"
-CSRF_COOKIE_SECURE = True
+# if DJANGO_ENV == "prod":
+#     CSRF_COOKIE_DOMAIN = ".ondamoim.com"
+#     CSRF_COOKIE_SAMESITE = "None"
+#     CSRF_COOKIE_SECURE = True
 
 # JWT 설정
 SIMPLE_JWT = {
