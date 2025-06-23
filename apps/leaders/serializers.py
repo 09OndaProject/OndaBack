@@ -52,9 +52,10 @@ class LeaderApplicationCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]  # id는 자동 생성되므로 읽기 전용
 
     def validate(self, data):
-        if "certificate_type" not in data:
+        certificate_type = data.get("certificate_type")
+        if certificate_type is not None and not isinstance(certificate_type, dict):
             raise serializers.ValidationError(
-                {"certificate_type": "자격증 종류를 선택해주세요."}
+                {"certificate_type": "올바른 형식의 자격증 종류를 입력해주세요."}
             )
         return data
 
