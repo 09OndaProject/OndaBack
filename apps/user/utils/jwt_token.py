@@ -43,8 +43,9 @@ def set_refresh_token_cookie(response, refresh_token, request):
         httponly=True,  # 백엔드만 접근 가능한 쿠키
         # False: 로컬 개발 환경에 맞춰서 설정 True: HTTPS 환경에서만 전송
         secure=is_prod,
-        # samesite="Lax",  # CSRF 공격 방지 설정
-        samesite="None",  # 다른 사이트 허용
+        samesite="Strict",  # 출처가 다르면 어떤 요청도 쿠키 전송 안 함
+        # samesite="Lax",  # 출처가 다른 요청 중, GET 요청만 쿠키 허용
+        # samesite="None",  # 출처가 달라도 모든 요청에 쿠키를 전송 허용
         path="/api/users/token",  # 필요한 경로에만 쿠키 사용
         domain=(
             ".ondamoim.com" if is_prod else None
