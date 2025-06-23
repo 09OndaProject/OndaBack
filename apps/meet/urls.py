@@ -13,7 +13,5 @@ urlpatterns = [
         MeetLeaderListView.as_view(),
         name="leader-meet-list",
     ),
-    path(
-        "meets/users", MeetUserListView.as_view(), name="user-meet-list"
-    ),
+    path("meets/users", MeetUserListView.as_view(), name="user-meet-list"),
 ]
