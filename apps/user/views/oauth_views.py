@@ -1,25 +1,28 @@
 from abc import ABC, abstractmethod
-from urllib.parse import urlencode
+from urllib.parse import unquote, urlencode
 
 import requests
 from django.contrib.auth import get_user_model
 from django.core import signing
+from django.core.files import File
 from django.core.signing import BadSignature
 from django.middleware.csrf import get_token
-from django.shortcuts import redirect, render
-from django.views.generic import RedirectView
+from django.shortcuts import redirect
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.upload.models import File, FileCategory
 from apps.user.models import Provider
-from apps.user.oauth_mixins import (
+from apps.user.utils.jwt_token import get_tokens_for_user, set_refresh_token_cookie
+from apps.user.utils.oauth_mixins import (
     KaKaoProviderInfoMixin,
 )
-from apps.user.utils.jwt_token import get_tokens_for_user
 from apps.user.utils.random_nickname import generate_unique_numbered_nickname
+from config.settings import FRONTEND_URL
 
 User = get_user_model()
 
@@ -44,27 +47,31 @@ def get_social_login_params(provider_info, callback_url):
     return params
 
 
-def build_callback_url(provider_info, request):
-    scheme = request.scheme
-    host = request.META.get("HTTP_HOST", "")
-    domain = f"{scheme}://{host}".replace("localhost", "127.0.0.1")
-    return domain + provider_info["callback_url_test"]
-
-
-class OauthLoginRedirectView(RedirectView, ABC):
+class OauthLoginRedirectView(APIView, ABC):
+    permission_classes = [AllowAny]
 
     @abstractmethod
     def get_provider_info(self):
         pass
 
-    def get_redirect_url(self, *args, **kwargs):
+    @swagger_auto_schema(
+        operation_summary="소셜 로그인 리디렉션",
+        operation_description="OAuth 제공자 로그인 페이지로 리디렉션됩니다.",
+        responses={302: "로그인 페이지로 리디렉션"},
+        tags=["소셜 로그인"],
+    )
+    def get(self, request, *args, **kwargs):
         provider_info = self.get_provider_info()
-        callback_url = build_callback_url(provider_info, self.request)
-        state = signing.dumps(provider_info["state"])
-
+        callback_url = request.query_params.get(
+            "callback_url",
+            (
+                request.META.get("HTTP_ORIGIN", FRONTEND_URL)
+                + provider_info["callback_url"]
+            ),
+        )
         params = get_social_login_params(provider_info, callback_url)
-        # print(f"{GOOGLE_LOGIN_URL}?{urlencode(params)}")
-        return f"{provider_info["login_url"]}?{urlencode(params)}"
+        login_url = f"{provider_info['login_url']}?{urlencode(params)}"
+        return redirect(login_url)
 
 
 class OAuthCallbackView(APIView, ABC):
@@ -76,17 +83,28 @@ class OAuthCallbackView(APIView, ABC):
 
     @swagger_auto_schema(
         tags=["소셜 로그인"],
-        operation_summary="소셜 로그인 콜백 처리 테스트용",
+        operation_summary="소셜 로그인 콜백 처리",
         operation_description="프론트엔드에서 받은 code와 state를 통해 access_token을 발급받고, 유저 정보를 기반으로 로그인 처리 후 JWT 토큰을 반환합니다.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["code", "state"],
+            properties={
+                "code": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="OAuth 인가 코드"
+                ),
+                "state": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="OAuth 요청 시 보낸 state 값"
+                ),
+            },
+        ),
+        responses={200: "로그인 성공", 400: "잘못된 요청", 401: "인증 실패"},
     )
-    def get(self, request, *args, **kwargs):
-        code = request.GET.get("code")
-        state = request.GET.get("state")
+    def post(self, request, *args, **kwargs):
+        code = unquote(request.data.get("code"))
+        state = unquote(request.data.get("state"))
 
         if not code or not state:
-            return redirect(
-                f"{self.get_frontend_fail_url()}?error=코드 또는 스테이트가 없습니다."
-            )
+            return Response({"detail": "코드 또는 스테이트가 없습니다."}, status=400)
 
         # state 검증 (시간 제한 없이)
         try:
@@ -98,34 +116,25 @@ class OAuthCallbackView(APIView, ABC):
 
         # 소셜로그인에 필요한 redirect_uri, client_id, grant_type 등의 provider_info 를 가져옴
         provider_info = self.get_provider_info()
+        provider_info["callback_url"] = request.query_params.get(
+            "callback_url",
+            (
+                request.META.get("HTTP_ORIGIN", FRONTEND_URL)
+                + provider_info["callback_url"]
+            ),
+        )
 
         # 엑세스 토큰 요청
-        token_response = self.get_access_token(code, provider_info)
-        if token_response.status_code != 200:
-            return redirect(
-                f"{self.get_frontend_fail_url()}?error=토큰을 가져올 수 없습니다."
-            )
-
-        access_token = token_response.json().get("access_token")
-        if not access_token:
-            return redirect(
-                f"{self.get_frontend_fail_url()}?error=엑세스 토큰이 없습니다."
-            )
+        access_token = self.get_access_token(code, provider_info)
 
         # 프로필 요청
-        profile_response = self.get_profile(access_token, provider_info)
-        if profile_response.status_code != 200:
-            return redirect(
-                f"{self.get_frontend_fail_url()}?error=프로필을 가져올 수 없습니다."
-            )
-
-        profile_data = profile_response.json()
-        email, name, nickname = self.get_user_data(profile_data, provider_info)
+        profile_data = self.get_profile(access_token, provider_info)
+        email, name, nickname, profile_image = self.get_user_data(
+            profile_data, provider_info
+        )
 
         if not email:
-            return redirect(
-                f"{self.get_frontend_fail_url()}?error=이메일을 가져올 수 없습니다."
-            )
+            return Response({"detail": "이메일을 가져올 수 없습니다."}, status=400)
 
         # 기존 유저가 있으면 가져오고 없으면 새로 생성
         user, created = User.objects.get_or_create(email=email)
@@ -136,6 +145,31 @@ class OAuthCallbackView(APIView, ABC):
             user.nickname = nickname
             user.set_password(User.objects.make_random_password())
             user.is_active = True
+
+            # 프로필 이미지가 있으면 다운로드하여 저장
+            if profile_image and not user.file:
+
+                # File 모델 인스턴스 생성
+                file_instance = File(
+                    user=user,
+                    category=FileCategory.PROFILE,
+                )
+
+                if file_instance.download_from_url(profile_image):
+
+                    # 파일 전처리
+                    file_instance.prepare(
+                        format=request.data.get("format", "webp").upper(),
+                        quality=int(request.data.get("quality", 85)),
+                        size=int(request.data.get("size", 500)) or None,
+                    )
+
+                # 파일 저장
+                file_instance.save()
+
+                # 사용자 프로필 이미지로 설정
+                user.file = file_instance
+
             user.save()
 
         # JWT 토큰 발급
@@ -145,22 +179,17 @@ class OAuthCallbackView(APIView, ABC):
         csrf_token = get_token(request=request)
 
         # 프론트로 토큰 전달
-        params = urlencode({"access_token": access_token, "csrf_token": csrf_token})
-        redirect_response = redirect(f"{self.get_frontend_success_url()}?{params}")
-
-        # 쿠키 추가
-        redirect_response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            secure=True,  # HTTPS 환경에서만 전송
-            # secure=False,  # 로컬 개발 환경에 맞춰서 설정
-            samesite="Lax",  # CSRF 공격 방지 설정
-            path="/api/users/token",  # 필요한 경로에만 쿠키 사용
-            max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)
+        response = Response(
+            {
+                "message": "로그인 성공",
+                "access_token": access_token,
+                "csrf_token": csrf_token,
+            }
         )
+        # 쿠키 추가
+        response = set_refresh_token_cookie(response, refresh_token, request)
 
-        return redirect_response
+        return response
 
     # 엑세스 토큰 가져오는 메서드
     def get_access_token(self, code, provider_info):
@@ -168,19 +197,19 @@ class OAuthCallbackView(APIView, ABC):
         requests 라이브러리를 활용하여 Oauth2 API 플랫폼에 액세스 토큰을 요청하는 함수
         """
         if provider_info["provider"] == Provider.GOOGLE:  # 구글
-            return requests.post(
+            response = requests.post(
                 provider_info["token_url"],
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "redirect_uri": build_callback_url(provider_info, self.request),
+                    "redirect_uri": provider_info["callback_url"],
                     "client_id": provider_info["client_id"],
                     "client_secret": provider_info["client_secret"],
                 },
             )
         else:
-            return requests.get(
+            response = requests.get(
                 provider_info["token_url"],
                 params={
                     "grant_type": "authorization_code",
@@ -190,19 +219,33 @@ class OAuthCallbackView(APIView, ABC):
                 },
             )
 
+        if response.status_code != 200:
+            return Response({"detail": "토큰을 가져올 수 없습니다."}, status=401)
+
+        access_token = response.json().get("access_token")
+        if not access_token:
+            return Response({"detail": "엑세스 토큰이 없습니다."}, status=401)
+
+        return access_token
+
     # 프로필 가져오는 메서드
     def get_profile(self, access_token, provider_info):
         """
         requests 라이브러리를 활용하여 Oauth2 API 플랫폼에 액세스 토큰을 사용하여 프로필 정보 조회를 요청하는 함수
         """
 
-        return requests.get(
+        response = requests.get(
             provider_info["profile_url"],
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
             },
         )
+
+        if response.status_code != 200:
+            return Response({"detail": "프로필을 가져올 수 없습니다."}, status=401)
+
+        return response.json()
 
     def get_user_data(self, profile_data, provider_info):
         """
@@ -214,14 +257,16 @@ class OAuthCallbackView(APIView, ABC):
             email = profile_data.get(provider_info["email_field"])
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
-            return email, name, nickname
+            profile_image = profile_data.get(provider_info["profile_image_field"], "")
+            return email, name, nickname, profile_image
 
         elif provider_info["provider"] == Provider.NAVER:  # 네이버
             profile_data = profile_data.get("response", {})
             email = profile_data.get(provider_info["email_field"])
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
-            return email, name, nickname
+            profile_image = profile_data.get(provider_info["profile_image_field"], "")
+            return email, name, nickname, profile_image
 
         elif provider_info["provider"] == Provider.KAKAO:  # 카카오
             account_data = profile_data.get("kakao_account", {})
@@ -229,15 +274,8 @@ class OAuthCallbackView(APIView, ABC):
             profile_data = account_data.get("profile", {})
             name = profile_data.get(provider_info["name_field"], "")
             nickname = profile_data.get(provider_info["nickname_field"], None)
-            return email, name, nickname
-
-    # 성공 프론트 리다이렉트 url
-    def get_frontend_success_url(self):
-        return "/api/users/oauth/callback-test"
-
-    # 실패 프론트 리다이렉트 url
-    def get_frontend_fail_url(self):
-        return f"{self.get_provider_info().get('frontend_fail_url', self.get_frontend_success_url())}"
+            profile_image = profile_data.get(provider_info["profile_image_field"], "")
+            return email, name, nickname, profile_image
 
 
 # 카카오 로그인
@@ -248,7 +286,3 @@ class KakaoLoginRedirectView(KaKaoProviderInfoMixin, OauthLoginRedirectView):
 # 카카오 콜백
 class KakaoCallbackView(KaKaoProviderInfoMixin, OAuthCallbackView):
     pass
-
-
-def oauth_callback_test_page(request):
-    return render(request, "oauth_callback_test.html")

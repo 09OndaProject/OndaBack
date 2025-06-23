@@ -1,10 +1,5 @@
-import re
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 from apps.options.models import Interest
@@ -12,6 +7,8 @@ from apps.options.serializers.area import AreaWithFullPathSerializer
 from apps.options.serializers.digital_level import DigitalLevelSerializer
 from apps.options.serializers.interest import InterestSerializer
 from apps.upload.serializers import FileSerializer
+from apps.user.utils.format import format_phone
+from apps.user.utils.validation import validate_phone_number, validate_strong_password
 
 User = get_user_model()
 
@@ -147,26 +144,3 @@ class AdminUserProfileUpdateSerializer(serializers.ModelSerializer):
                 "is_active": {"write_only": True},
                 "role": {"write_only": True},
             }
-
-
-def validate_strong_password(password, user=None):
-    try:
-        validate_password(password=password, user=user)
-    except ValidationError as e:
-        raise ValidationError(
-            {
-                "detail": "비밀번호가 보안 기준을 만족하지 않습니다.",
-                "error_message": list(e.messages),
-            }
-        )
-
-
-def validate_phone_number(value):
-    cleaned = re.sub(r"\D", "", value)
-    if not cleaned.isdigit() or len(cleaned) < 11:
-        raise serializers.ValidationError("올바른 전화번호를 입력하세요.")
-    return cleaned
-
-
-def format_phone(phone):
-    return f"{phone[:3]}-{phone[3:7]}-{phone[7:]}"

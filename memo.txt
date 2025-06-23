@@ -953,7 +953,7 @@ class CustomCSRFMiddleware:
 -----------------------------
 Ubuntu 서버에서 CI/CD 사용해 배포 설정하기
 -----------------------------
-ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.4.19
+ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.72.164
 chmod 400 ~/Downloads/onda-key-aws.pem
 
 mv ~/Downloads/wistar.pem ~/.ssh
@@ -1656,6 +1656,7 @@ s3 버킷 정책 설정
     ]
 }
 
+서버 직접 실행
 이렇게 실행시 서버 실행 오류 확인 가능
 gunicorn config.wsgi:application
 
@@ -1804,3 +1805,306 @@ Postman, cURL 등에서는 임의 조작이 가능하므로 절대 보안 판단
 서버와 OAuth 플랫폼이 "허용된 출처"와 "리디렉션 경로"만 허용하므로 조작 가능성은 매우 낮음
 CORS, 소셜 로그인 설정 등에서 출처(origin)/redirect URI가 정확히 일치해야 동작하므로,
 조작해서 우회하는 건 사실상 불가능
+
+
+----------------
+채팅기능 추가
+----------------
+
+✅ 1. 전체 구성도
+Django + Channels: WebSocket 서버 구현
+
+Redis: Channels의 메시지 브로커
+
+Frontend (옵션): JS로 WebSocket 연결
+
+DB (PostgreSQL 등): 메시지 저장
+
+✅ 2. 패키지 설치
+poetry add channels channels-redis
+poetry add 'uvicorn[standard]'
+brew install redis
+brew services start redis
+
+✅ 3. settings.py 설정
+INSTALLED_APPS = [
+    ...
+    'channels',
+    'chat',  # 앱 이름
+]
+
+ASGI_APPLICATION = "your_project.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],  # 또는 Docker 내부에서 'redis'
+        },
+    },
+}
+✅ 4. asgi.py 설정
+import os
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from django.core.asgi import get_asgi_application
+import chat.routing  # 앱의 routing.py
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "your_project.settings")
+
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),
+    "websocket": AuthMiddlewareStack(
+        URLRouter(chat.routing.websocket_urlpatterns)
+    ),
+})
+✅ 5. chat/routing.py
+from django.urls import re_path
+from . import consumers
+
+websocket_urlpatterns = [
+    re_path(r"ws/chat/(?P<room_name>\w+)/$", consumers.ChatConsumer.as_asgi()),
+]
+✅ 6. chat/consumers.py
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+        self.room_group_name = f"chat_{self.room_name}"
+
+        # 그룹에 참가
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name,
+        )
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # 그룹에서 나가기
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name,
+        )
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        message = data["message"]
+
+        # 그룹에 메시지 전송
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "chat_message",
+                "message": message,
+            },
+        )
+
+    async def chat_message(self, event):
+        message = event["message"]
+
+        # WebSocket으로 메시지 전송
+        await self.send(text_data=json.dumps({
+            "message": message,
+        }))
+✅ 7. JS 프론트 WebSocket 예시
+<script>
+  const roomName = "room1";
+  const socket = new WebSocket(
+    "ws://" + window.location.host + "/ws/chat/" + roomName + "/"
+  );
+
+  socket.onmessage = function (e) {
+    const data = JSON.parse(e.data);
+    console.log("Received:", data.message);
+  };
+
+  socket.onopen = function () {
+    socket.send(JSON.stringify({
+      message: "Hello from browser!",
+    }));
+  };
+</script>
+✅ 8. 메시지 저장 (선택)
+
+models.py에 메시지를 저장하고 싶다면:
+
+class ChatMessage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    room_name = models.CharField(max_length=255)
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+consumers.py의 receive()에서 DB에 저장도 함께 처리:
+
+from .models import ChatMessage
+
+await ChatMessage.objects.acreate(
+    user=self.scope["user"],  # 인증된 유저
+    room_name=self.room_name,
+    message=message,
+)
+
+env에 설정
+DJANGO_SETTINGS_MODULE=config.settings
+
+uvicorn 실행
+poetry run uvicorn config.asgi:application --reload --env-file envs/.env
+
+채팅 테스트
+https://websocketking.com/
+
+테스트 주소 입력
+ws://127.0.0.1:8000/ws/group-chat/1/?token=<JWT_ACCESS_TOKEN>
+wss://api.ondamoim.com/ws/group-chat/1/?token=<JWT_ACCESS_TOKEN>
+wss://api.ondamoim.com/ws/group-chat/1/?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUwNDExNDM1LCJpYXQiOjE3NTA0MDc4MzUsImp0aSI6ImRhNTk4NDg5NGFjZDQ5N2ZiMWZiM2VhYWRhN2M0NGFlIiwidXNlcl9pZCI6NDgsImVtYWlsIjoiaGFtYUBleGFtcGxlLmNvbSIsIm5hbWUiOiJcdWQ1NThcdWI5YzgiLCJuaWNrbmFtZSI6Ilx1YWRjMFx1YzVlY1x1YzZiNFx1ZDU1OFx1YjljOCIsInByb3ZpZGVyIjoiaG9tZSIsInJvbGUiOiJsZWFkZXIifQ.xP43nuM-e6a6_lgtnUKZuhfNHFnYLcsGcay2JuFdwmE
+
+서버에 적용하기
+
+서버 설정 변경
+sudo vi /etc/systemd/system/gunicorn.service
+
+[Unit]
+Description=Gunicorn + UvicornWorker (Django ASGI)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/OndaBack
+ExecStart=/home/ubuntu/.pyenv/versions/onda/bin/gunicorn \
+        --access-logfile /var/log/gunicorn/access.log \
+        --error-logfile /var/log/gunicorn/error.log \
+        --log-level info \
+        --workers 3 \
+        --worker-class uvicorn.workers.UvicornWorker \
+        --bind unix:/srv/gunicorn/gunicorn.sock config.asgi:application
+Environment="DJANGO_SETTINGS_MODULE=config.settings"
+[Install]
+WantedBy=multi-user.target
+
+nginx 설정 추가
+sudo vi /etc/nginx/sites-available/django.conf
+    location /ws/ {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        include proxy_params;
+        proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+    }
+
+sudo systemctl daemon-reload
+sudo systemctl restart gunicorn.service
+sudo systemctl status gunicorn.service
+
+sudo systemctl reload nginx.service
+sudo systemctl status nginx.service
+
+
+
+-----------------------------
+drf_yasg 자동 스웨거 문서화 툴
+-----------------------------
+
+라이브러리 추가
+poetry add drf-yasg
+
+INSTALLED_APPS ["drf_yasg",]
+
+# config/schema.py
+# 스웨거 초기화
+schema_view = get_schema_view(
+    openapi.Info(
+        title="WiStar API",
+        default_version="v1",
+        description="WiStar API 문서",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="xowls0131@naver.com"),
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    authentication_classes=[],  # Swagger 자체는 인증 안함
+    permission_classes=[
+        permissions.AllowAny,
+    ],
+    generator_class=ExcludeAppsSchemaGenerator,
+)
+
+# config/urls.py
+# url 추가
+if settings.DEBUG:
+    urlpatterns += [
+        path("admin/", admin.site.urls),
+        path(
+            "swagger<format>",
+            schema_view.without_ui(cache_timeout=0),
+            name="schema-json",
+        ),
+        path(
+            "swagger",
+            schema_view.with_ui("swagger", cache_timeout=0),
+            name="schema-swagger-ui",
+        ),
+        path(
+            "redoc", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
+        ),
+    ]
+
+# 데코레이터 붙이는 법
+# 사용할 메서드 위에 @swagger_auto_schema 붙임
+apiview, genericapiview 쓰면 get, post, put, patch, delete 메서드에 데코레이터 붙이고
+viewset 쓸때는 list, retrieve,update, patial_update, destroy 메서드에 데코레이터 붙임
+
+# config/settings.py
+# 스웨거 페이지 토큰 로그인 설정
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT 인증을 위해 다음과 같이 입력하세요: **Bearer &lt;access_token&gt;**",
+        }
+    },
+}
+
+
+# config/schema.py
+# 특정 앱의 뷰 스웨거 문서화 제외 설정
+class ExcludeAppsSchemaGenerator(OpenAPISchemaGenerator):
+    # 제외할 앱의 뷰 설정  settings.py SWAGGER_EXCLUDED_APPS에 설정
+    EXCLUDED_APPS = getattr(settings, "SWAGGER_EXCLUDED_APPS", [])
+
+    def get_endpoints(self, request):
+        endpoints = super().get_endpoints(request)
+        filtered = {}
+        for path, (view_cls, method_map) in endpoints.items():
+            if not any(
+                view_cls.__module__.startswith(app) for app in self.EXCLUDED_APPS
+            ):
+                filtered[path] = (view_cls, method_map)
+        return filtered
+
+# config/settings.py
+# 제외할 앱 추가
+SWAGGER_EXCLUDED_APPS = [
+    # "apps.user.views",
+]  # 제외할 앱 이름
+
+
+쿼리 파라미터로 JWT 전달이 위험한 이유
+문제점                     설명
+🌐 브라우저 히스토리에 남음   URL은 기록되기 때문에 노출 위험 있음
+📁 서버 로그에 노출 가능성    Nginx, 로드밸런서, 프록시 서버에 기록될 수 있음
+🔍 중간자 공격 대상         HTTPS를 쓰지 않으면 탈취 가능
+🔁 토큰 갱신 어려움         URL로 보낸 토큰은 자동 갱신 처리도 까다로움
+
+nginx 실시간 로그 확인
+access_log /var/log/nginx/access.log;
+error_log /var/log/nginx/error.log;
+
+gunicorn 로그 확인
+cat /var/log/gunicorn/error.log

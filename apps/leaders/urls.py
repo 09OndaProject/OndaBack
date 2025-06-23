@@ -20,7 +20,7 @@ urlpatterns = [
         "leader-applies/<int:pk>/status", LeaderApplicationStatusUpdateView.as_view()
     ),  # PATCH (관리자)
     path(
-        "leader-applyies/<int:pk>/delete",
+        "leader-applies/<int:pk>/delete",
         LeaderApplicationDeleteView.as_view(),
     ),
     path(

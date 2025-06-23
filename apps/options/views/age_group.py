@@ -7,7 +7,9 @@ from apps.options.models.age_group import AgeGroup
 from apps.options.serializers.age_group import AgeGroupSerializer
 
 
-@method_decorator(cache_page(60 * 60, key_prefix="age_group_list"), name="dispatch")
+@method_decorator(
+    cache_page(60 * 60 * 24, key_prefix="age_group_list"), name="dispatch"
+)
 class AgeGroupListView(generics.ListAPIView):
     queryset = AgeGroup.objects.all()
     serializer_class = AgeGroupSerializer
