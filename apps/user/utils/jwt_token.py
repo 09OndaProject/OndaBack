@@ -47,9 +47,7 @@ def set_refresh_token_cookie(response, refresh_token, request):
         # samesite="Lax",  # 출처가 다른 요청 중, GET 요청만 쿠키 허용
         # samesite="None",  # 출처가 달라도 모든 요청에 쿠키를 전송 허용
         path="/api/users/token",  # 필요한 경로에만 쿠키 사용
-        domain=(
-            ".ondamoim.com" if is_prod else None
-        ),  # 특정 도메인에만 쿠키 사용
+        domain=(".ondamoim.com" if is_prod else None),  # 특정 도메인에만 쿠키 사용
         max_age=60 * 60 * 24 * 1,  # 1일 (초 단위)
     )
     return response
