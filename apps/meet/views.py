@@ -81,6 +81,12 @@ class MeetListCreateView(generics.ListCreateAPIView):
                 type=openapi.TYPE_INTEGER,
                 description="디지털 수준",
             ),
+            openapi.Parameter(
+                "status",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_BOOLEAN,
+                description="모집 상태",
+            ),
         ],
         responses={200: MeetListSerializer(many=True)},
     )
