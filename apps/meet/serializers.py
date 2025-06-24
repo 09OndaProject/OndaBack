@@ -95,6 +95,16 @@ class MeetUserListSerializer(serializers.ModelSerializer):
     status = serializers.ReadOnlyField()
     area = serializers.CharField(source="area.full_path", read_only=True)
     file = FileSerializer(read_only=True)
+    # 리뷰의 평점 평균
+    meet_rating = serializers.SerializerMethodField()
+    # 리뷰 개수
+    review_count = serializers.SerializerMethodField()
+
+    def get_meet_rating(self, obj):
+        return obj.reviews.aggregate(avg=Avg("rating"))["avg"] or 0
+
+    def get_review_count(self, obj):
+        return obj.reviews.count()
 
     class Meta:
         model = Meet
