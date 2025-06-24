@@ -1,6 +1,7 @@
 # meet/views.py
-from django.db.models import F
+from django.db.models import BooleanField, Case, F, Q, Value, When
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
@@ -23,8 +24,7 @@ from .serializers import (
     MeetUpdateSerializer,
     MeetUserListSerializer,
 )
-from django.db.models import Case, When, Value, BooleanField, F, Q
-from django.utils import timezone
+
 
 # /api/meets [GET, POST]
 class MeetListCreateView(generics.ListCreateAPIView):
@@ -84,7 +84,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
             openapi.Parameter(
                 "status",
                 openapi.IN_QUERY,
-                type=openapi.TYPE_BOOLEAN,
+                type=openapi.TYPE_STRING,
                 description="모집 상태",
             ),
         ],
@@ -101,7 +101,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
         area_id = self.request.query_params.get("area")
         category = self.request.query_params.get("category")
         digital_level = self.request.query_params.get("digital_level")
-        status=self.request.query_params.get("status")
+        status = self.request.query_params.get("status")
 
         if title:
             queryset = queryset.filter(title__icontains=title)
@@ -115,19 +115,25 @@ class MeetListCreateView(generics.ListCreateAPIView):
                 queryset = queryset.none()
 
         if category:
-            queryset = queryset.filter(category=category)
+            queryset = queryset.filter(category_id=category)
 
         if digital_level:
-            queryset = queryset.filter(digital_level=digital_level)
-        
+            queryset = queryset.filter(digital_level_id=digital_level)
+
         if status is not None:
             status_bool = status.lower() == "true"
             now = timezone.now()
             queryset = queryset.annotate(
                 status_annotated=Case(
                     When(
-                        Q(application_deadline__isnull=False, application_deadline__lt=now) |
-                        Q(max_people__isnull=False, current_people__gte=F('max_people')),
+                        Q(
+                            application_deadline__isnull=False,
+                            application_deadline__lt=now,
+                        )
+                        | Q(
+                            max_people__isnull=False,
+                            current_people__gte=F("max_people"),
+                        ),
                         then=Value(False),  # 마감
                     ),
                     default=Value(True),  # 모집중
