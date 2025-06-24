@@ -111,12 +111,8 @@ class RegisterView(CreateAPIView):
         if settings.DEBUG:
             # 응답에 verify_url 포함
             response_data["verify_url"] = verify_url
-            return Response(
-                {"message": "회원가입이 완료되었습니다.", **response_data},
-                status=status.HTTP_201_CREATED,
-            )
         return Response(
-            {"message": "회원가입이 완료되었습니다.", "id": response_data["id"]},
+            {"message": "회원가입이 완료되었습니다.", **response_data},
             status=status.HTTP_201_CREATED,
         )
 
@@ -522,7 +518,7 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
     @swagger_auto_schema(
         tags=["유저/프로필"],
         operation_summary="내 프로필 수정",
-        request_body=ProfileSerializer,
+        request_body=ProfileUpdateSerializer,
         responses={
             200: openapi.Response(
                 description="프로필 수정 성공",
@@ -566,15 +562,11 @@ class ProfileView(RetrieveUpdateDestroyAPIView):
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
 
-        if settings.DEBUG:
-            return Response(
-                {
-                    "message": "회원정보 수정이 완료되었습니다.",
-                    **serializer.data,  # 포맷된 출력 보기
-                }
-            )
         return Response(
-            {"message": "회원정보 수정이 완료되었습니다.", "id": serializer.data["id"]}
+            {
+                "message": "회원정보 수정이 완료되었습니다.",
+                **serializer.data,  # 포맷된 출력 보기
+            }
         )
 
     @swagger_auto_schema(
