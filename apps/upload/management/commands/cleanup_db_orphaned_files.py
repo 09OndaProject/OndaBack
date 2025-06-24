@@ -1,9 +1,10 @@
 # cleanup_db_orphaned_files.py
 
 import os
+
+import boto3
 from django.conf import settings
 from django.core.management.base import BaseCommand
-import boto3
 
 from apps.upload.models import File
 
@@ -16,7 +17,7 @@ class Command(BaseCommand):
             "--prefix",
             type=str,
             help="검사할 S3 Prefix (예: post, profile, meet, certificate, other)",
-            choices=["profile", "post", "meet", "certificate", "other"]
+            choices=["profile", "post", "meet", "certificate", "other"],
         )
 
     def handle(self, *args, **options):
@@ -45,20 +46,17 @@ class Command(BaseCommand):
                 response = s3_client.list_objects_v2(
                     Bucket=bucket_name,
                     Prefix=prefix,
-                    ContinuationToken=continuation_token
+                    ContinuationToken=continuation_token,
                 )
             else:
-                response = s3_client.list_objects_v2(
-                    Bucket=bucket_name,
-                    Prefix=prefix
-                )
+                response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
 
-            contents = response.get('Contents', [])
+            contents = response.get("Contents", [])
             for obj in contents:
-                s3_keys.add(obj['Key'])
+                s3_keys.add(obj["Key"])
 
-            if response.get('IsTruncated'):
-                continuation_token = response.get('NextContinuationToken')
+            if response.get("IsTruncated"):
+                continuation_token = response.get("NextContinuationToken")
             else:
                 break
 
@@ -82,7 +80,11 @@ class Command(BaseCommand):
                 file.delete(soft=False)
                 total_deleted += 1
 
-        self.stdout.write(self.style.SUCCESS(f"총 {total_checked}개 중 {total_deleted}개 DB 삭제 완료"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"총 {total_checked}개 중 {total_deleted}개 DB 삭제 완료"
+            )
+        )
 
 
 # 명령어
