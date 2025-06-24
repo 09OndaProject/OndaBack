@@ -16,45 +16,6 @@ from apps.user.utils.validation import validate_phone_number, validate_strong_pa
 User = get_user_model()
 
 
-class UserListSerializer(serializers.ModelSerializer):
-    # age_group = serializers.CharField(source="age_group.name", read_only=True)
-    area = serializers.CharField(source="area.full_path", read_only=True)
-    interests = serializers.SlugRelatedField(
-        slug_field="interest_name", read_only=True, many=True
-    )
-    digital_level = serializers.CharField(
-        source="digital_level.description", read_only=True
-    )
-    file = serializers.CharField(source="file.file.url", read_only=True)
-    thumbnail = serializers.CharField(source="file.thumbnail.url", read_only=True)
-
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "email",
-            "name",
-            "nickname",
-            "phone_number",
-            "date_of_birth",
-            # "age_group",
-            "area",
-            "interests",
-            "digital_level",
-            "file",
-            "thumbnail",
-            "created_at",
-            "updated_at",
-        ]
-
-    # serializer.data 출력 값 변환
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        if phone_number := data.get("phone_number"):
-            data["phone_number"] = format_phone(phone_number)
-        return data
-
-
 class UsernameSerializer(serializers.ModelSerializer):
     """사용자 이름 시리얼라이저"""
 
@@ -66,7 +27,7 @@ class UsernameSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
     interests = serializers.PrimaryKeyRelatedField(
-        queryset=Interest.objects.all(), many=True, required=False
+        queryset=Interest.objects.all(), many=True, required=False, write_only=True
     )
 
     class Meta:
@@ -84,30 +45,24 @@ class RegisterSerializer(serializers.ModelSerializer):
             "area",
             "interests",
             "digital_level",
+            "introduction",
             "file",
-            # "created_at",
-            # "updated_at",
         ]
         read_only_fields = ["id"]
         extra_kwargs = {
+            # write_only : 쓰기만 되고 읽어 오진 않음.
+            # "current_password": {"write_only": True},  # 유저 모델의 필드만 적용됨.
             "password": {"write_only": True},
-            "password_confirm": {"write_only": True},
+            "email": {"write_only": True},
+            "name": {"write_only": True},
+            "nickname": {"write_only": True},
+            "phone_number": {"write_only": True},
+            "date_of_birth": {"write_only": True},
+            "area": {"write_only": True},
+            "digital_level": {"write_only": True},
+            "introduction": {"write_only": True},
+            "file": {"write_only": True},
         }
-
-        if not settings.DEBUG:
-            extra_kwargs.update(
-                {
-                    "email": {"write_only": True},
-                    "name": {"write_only": True},
-                    "nickname": {"write_only": True},
-                    "phone_number": {"write_only": True},
-                    "date_of_birth": {"write_only": True},
-                    "area": {"write_only": True},
-                    "interests": {"write_only": True},
-                    "digital_level": {"write_only": True},
-                    "file": {"write_only": True},
-                }
-            )
 
     # 데이터 검증
     def validate(self, data):
@@ -164,6 +119,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     interests = InterestSerializer(many=True, read_only=True)
     digital_level = DigitalLevelSerializer()
     file = FileSerializer()
+    role = serializers.CharField(source="get_role_display", read_only=True)
 
     class Meta:
         model = User
@@ -178,7 +134,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             "area",
             "interests",
             "digital_level",
+            "introduction",
             "file",
+            "role",
             "created_at",
             "updated_at",
         ]
@@ -196,12 +154,8 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     new_password = serializers.CharField(write_only=True)
     new_password_confirm = serializers.CharField(write_only=True)
     interests = serializers.PrimaryKeyRelatedField(
-        queryset=Interest.objects.only("id"), many=True
+        queryset=Interest.objects.only("id"), many=True, write_only=True
     )
-    # area = AreaSerializer()
-    # interest = InterestSerializer()
-    # digital_level = DigitalLevelSerializer()
-    # image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -219,30 +173,23 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             "area",
             "interests",
             "digital_level",
+            "introduction",
             "file",
         ]
         read_only_fields = ["id"]
         extra_kwargs = {
             # write_only : 쓰기만 되고 읽어 오진 않음.
-            "current_password": {"write_only": True},
-            "new_password": {"write_only": True},
-            "new_password_confirm": {"write_only": True},
+            # "current_password": {"write_only": True},  # 유저 모델의 필드만 적용됨.
+            "email": {"write_only": True},
+            "name": {"write_only": True},
+            "nickname": {"write_only": True},
+            "phone_number": {"write_only": True},
+            "date_of_birth": {"write_only": True},
+            "area": {"write_only": True},
+            "digital_level": {"write_only": True},
+            "introduction": {"write_only": True},
+            "file": {"write_only": True},
         }
-
-        if not settings.DEBUG:
-            extra_kwargs.update(
-                {
-                    "email": {"write_only": True},
-                    "name": {"write_only": True},
-                    "nickname": {"write_only": True},
-                    "phone_number": {"write_only": True},
-                    "date_of_birth": {"write_only": True},
-                    "area": {"write_only": True},
-                    "interest": {"write_only": True},
-                    "digital_level": {"write_only": True},
-                    "file": {"write_only": True},
-                }
-            )
 
     # serializer.data 출력 값 변환
     def to_representation(self, instance):

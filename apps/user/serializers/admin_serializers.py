@@ -7,10 +7,20 @@ from apps.options.serializers.area import AreaWithFullPathSerializer
 from apps.options.serializers.digital_level import DigitalLevelSerializer
 from apps.options.serializers.interest import InterestSerializer
 from apps.upload.serializers import FileSerializer
+from apps.user.models import UserRole
 from apps.user.utils.format import format_phone
 from apps.user.utils.validation import validate_phone_number, validate_strong_password
 
 User = get_user_model()
+
+
+class RoleSerializer(serializers.ModelSerializer):
+    role_value = serializers.IntegerField(source="role", read_only=True)
+    role_name = serializers.CharField(source="get_role_display", read_only=True)
+
+    class Meta:
+        model = User
+        fields = ["role_value", "role_name"]
 
 
 class AdminUserListSerializer(serializers.ModelSerializer):
@@ -24,10 +34,11 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     )
     file = serializers.CharField(source="file.file.url", read_only=True)
     thumbnail = serializers.CharField(source="file.thumbnail.url", read_only=True)
+    role = serializers.CharField(source="get_role_display", read_only=True)
 
     class Meta:
         model = User
-        fields = "__all__"
+        exclude = ["password"]
 
     # serializer.data 출력 값 변환
     def to_representation(self, instance):
@@ -40,42 +51,41 @@ class AdminUserListSerializer(serializers.ModelSerializer):
 class AdminUserCreateSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
     interests = serializers.PrimaryKeyRelatedField(
-        queryset=Interest.objects.all(), many=True, required=False
+        queryset=Interest.objects.all(), many=True, required=False, write_only=True
     )
+    role = serializers.CharField(required=False, write_only=True)
 
     class Meta:
         model = User
         exclude = [
+            "provider",
             "last_login",
             "created_at",
             "updated_at",
+            "is_deleted",
+            "deleted_at",
         ]
         read_only_fields = ["id"]
         extra_kwargs = {
+            # write_only : 쓰기만 되고 읽어 오진 않음.
+            # "current_password": {"write_only": True},  # 유저 모델의 필드만 적용됨.
             "password": {"write_only": True},
-            "password_confirm": {"write_only": True},
+            "email": {"write_only": True},
+            "name": {"write_only": True},
+            "nickname": {"write_only": True},
+            "phone_number": {"write_only": True},
+            "date_of_birth": {"write_only": True},
+            "area": {"write_only": True},
+            "digital_level": {"write_only": True},
+            "file": {"write_only": True},
         }
-
-        if not settings.DEBUG:
-            extra_kwargs.update(
-                {
-                    "email": {"write_only": True},
-                    "name": {"write_only": True},
-                    "nickname": {"write_only": True},
-                    "phone_number": {"write_only": True},
-                    "date_of_birth": {"write_only": True},
-                    "area": {"write_only": True},
-                    "interests": {"write_only": True},
-                    "digital_level": {"write_only": True},
-                    "file": {"write_only": True},
-                }
-            )
 
     # 데이터 검증
     def validate(self, data):
         password = data.get("password")
         password_confirm = data.get("password_confirm")
         phone_number = data.get("phone_number")
+        role = data.get("role")
 
         # 비밀번호 일치 여부 확인
         if password_confirm:
@@ -90,6 +100,9 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
 
         if phone_number:
             data["phone_number"] = validate_phone_number(phone_number)
+
+        if role:
+            data["role"] = UserRole[role.upper()].value
 
         return super().validate(data)
 
@@ -117,6 +130,7 @@ class AdminUserProfileSerializer(serializers.ModelSerializer):
     interests = InterestSerializer(many=True, read_only=True)
     digital_level = DigitalLevelSerializer()
     file = FileSerializer()
+    role = serializers.CharField(source="get_role_display", read_only=True)
 
     class Meta:
         model = User
@@ -133,14 +147,18 @@ class AdminUserProfileSerializer(serializers.ModelSerializer):
 
 
 class AdminUserProfileUpdateSerializer(serializers.ModelSerializer):
+    role = serializers.CharField(required=False, write_only=True)
 
     class Meta:
         model = User
         fields = ["id", "is_active", "role"]
         read_only_fields = ["id"]
-        if not settings.DEBUG:
-            extra_kwargs = {
-                # write_only : 쓰기만 되고 읽어 오진 않음.
-                "is_active": {"write_only": True},
-                "role": {"write_only": True},
-            }
+        extra_kwargs = {
+            # write_only : 쓰기만 되고 읽어 오진 않음.
+            "is_active": {"write_only": True},
+        }
+
+    def validate(self, data):
+        if role := data.get("role"):
+            data["role"] = UserRole[role.upper()].value
+        return super().validate(data)
