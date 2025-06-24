@@ -194,10 +194,6 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     )
     def patch(self, request, *args, **kwargs):
         meet = self.get_object()
-
-        if meet.user != request.user:
-            raise PermissionDenied("모임을 수정할 권한이 없습니다.")
-
         serializer = self.get_serializer(meet, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -230,10 +226,6 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     )
     def put(self, request, *args, **kwargs):
         meet = self.get_object()
-
-        if meet.user != request.user:
-            raise PermissionDenied("모임을 수정할 권한이 없습니다.")
-
         serializer = self.get_serializer(meet, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -252,8 +244,6 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     )
     def delete(self, request, *args, **kwargs):
         meet = self.get_object()
-        if meet.user != request.user:
-            raise PermissionDenied("모임을 삭제할 권한이 없습니다.")
         self.perform_destroy(meet)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
