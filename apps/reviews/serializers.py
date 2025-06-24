@@ -37,7 +37,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 
 class ReviewDisplaySerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source="user.username", read_only=True)
+    nickname = serializers.CharField(source="user.nickname", read_only=True)
     meet_title = serializers.CharField(source="meet.title", read_only=True)
     meet_date = serializers.DateField(source="meet.date", read_only=True)
     meet_location = serializers.CharField(source="meet.location", read_only=True)
@@ -46,7 +46,7 @@ class ReviewDisplaySerializer(serializers.ModelSerializer):
         model = Review
         fields = [
             "id",
-            "user_name",
+            "nickname",
             "rating",
             "content",
             "created_at",
