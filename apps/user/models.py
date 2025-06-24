@@ -126,6 +126,7 @@ class User(AbstractBaseUser, TimestampModel):  # 기본 기능은 상속받아�
         default=Provider.HOME.value,
         choices=Provider.choices(),
     )
+    introduction = models.TextField(verbose_name="소개", blank=True, null=True)
     role = models.PositiveSmallIntegerField(
         verbose_name="권한",
         default=UserRole.USER.value,
