@@ -34,7 +34,7 @@ class InterestNameSerializer(serializers.ModelSerializer):
 
 
 # 2. 파일 상세용 Serializer (필요한 필드만 포함, 썸네일은 url로 반환)
-class FileSerializer(serializers.ModelSerializer):
+class PostFileSerializer(serializers.ModelSerializer):
     file = serializers.FileField()
     thumbnail = serializers.ImageField()
     user_id = serializers.PrimaryKeyRelatedField(source="user", read_only=True)
@@ -66,7 +66,7 @@ class PostSerializer(serializers.ModelSerializer):
     category = CategoryNameSerializer(read_only=True)
     area = AreaNameSerializer(read_only=True)
     interest = InterestNameSerializer(read_only=True)
-    file = FileSerializer(read_only=True)
+    file = PostFileSerializer(read_only=True)
 
     # 쓰기용(등록/수정) 필드
     category_id = serializers.PrimaryKeyRelatedField(
