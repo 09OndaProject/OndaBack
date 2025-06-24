@@ -32,7 +32,9 @@ class FileSerializer(serializers.ModelSerializer):
         files = []
 
         if request := self.context.get("request", None):
-            category = request.data.get("category") or "other"  # None, "", 0, [] 등 Falsy 값이면
+            category = (
+                request.data.get("category") or "other"
+            )  # None, "", 0, [] 등 Falsy 값이면
             category = category.lower()
 
             for upload_file in request.FILES.getlist("file"):
