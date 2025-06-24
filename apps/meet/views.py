@@ -23,7 +23,8 @@ from .serializers import (
     MeetUpdateSerializer,
     MeetUserListSerializer,
 )
-
+from django.db.models import Case, When, Value, BooleanField, F, Q
+from django.utils import timezone
 
 # /api/meets [GET, POST]
 class MeetListCreateView(generics.ListCreateAPIView):
@@ -94,6 +95,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
         area_id = self.request.query_params.get("area")
         category = self.request.query_params.get("category")
         digital_level = self.request.query_params.get("digital_level")
+        status=self.request.query_params.get("status")
 
         if title:
             queryset = queryset.filter(title__icontains=title)
@@ -111,6 +113,21 @@ class MeetListCreateView(generics.ListCreateAPIView):
 
         if digital_level:
             queryset = queryset.filter(digital_level=digital_level)
+        
+        if status is not None:
+            status_bool = status.lower() == "true"
+            now = timezone.now()
+            queryset = queryset.annotate(
+                status_annotated=Case(
+                    When(
+                        Q(application_deadline__isnull=False, application_deadline__lt=now) |
+                        Q(max_people__isnull=False, current_people__gte=F('max_people')),
+                        then=Value(False),  # 마감
+                    ),
+                    default=Value(True),  # 모집중
+                    output_field=BooleanField(),
+                )
+            ).filter(status_annotated=status_bool)
 
         return queryset
 
