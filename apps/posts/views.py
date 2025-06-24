@@ -1,5 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import filters, generics, permissions, status
+from rest_framework import filters, generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,6 +16,13 @@ class PostListCreateView(generics.ListCreateAPIView):
     search_fields = ["title", "content"]
 
     @swagger_auto_schema(tags=["게시글"])
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(tags=["게시글"])
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -25,6 +32,18 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(tags=["게시글"])
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(tags=["게시글"])
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+    @swagger_auto_schema(tags=["게시글"])
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
     def perform_update(self, serializer):
         # 본인만 수정/삭제 가능 로직 필요
         if self.request.user != self.get_object().user:
@@ -33,14 +52,17 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
-
-    queryset = Comment.objects.filter(parent=None).order_by(
-        "-created_at"
-    )  # 최상위 댓글만
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     @swagger_auto_schema(tags=["댓글"])
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(tags=["댓글"])
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
     def get_queryset(self):
         # 특정 게시글(post_id)에 대한 댓글만
         post_id = self.kwargs["post_id"]
@@ -58,6 +80,18 @@ class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    @swagger_auto_schema(tags=["댓글"])
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(tags=["댓글"])
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+    @swagger_auto_schema(tags=["댓글"])
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
 
     def perform_update(self, serializer):
         if self.request.user != self.get_object().user:
