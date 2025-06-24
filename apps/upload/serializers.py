@@ -9,7 +9,7 @@ class FileSerializer(serializers.ModelSerializer):
         model = File
         fields = [
             "id",
-            "user_id",
+            "user",
             "category",
             "file",
             "file_type",
@@ -20,7 +20,7 @@ class FileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
-            "user_id",
+            "user",
             "file_type",
             "file_name",
             "file_size",
@@ -32,22 +32,23 @@ class FileSerializer(serializers.ModelSerializer):
         files = []
 
         if request := self.context.get("request", None):
-            print("request", request)
+            category = (
+                request.data.get("category") or "other"
+            )  # None, "", 0, [] 등 Falsy 값이면
+            category = category.lower()
 
             for upload_file in request.FILES.getlist("file"):
-                print("uploading file", upload_file)
+
                 file = File(
                     file=upload_file,
                     user=request.user,
-                    category=validated_data.get("category").lower(),
+                    category=category,
                 )
                 file.prepare(
                     format=request.data.get("format", "webp").upper(),
                     quality=int(request.data.get("quality", 85)),
                     size=int(request.data.get("size", 500)) or None,
                 )
-                print("test1", file)
                 files.append(file)
-                print("test2", files)
 
         return File.objects.bulk_create(files)  # 리스트 반환

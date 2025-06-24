@@ -599,6 +599,10 @@ final_response.set_cookie(
 )
 return final_response
 
+samesite="Lax" → 출처가 다른 요청 중, GET 요청만 쿠키 허용 (POST, PUT, PATCH는 안 됨)
+samesite="Strict" → 출처가 다르면 어떤 요청도 쿠키 전송 안 함
+samesite="None" → 출처가 달라도 모든 요청에 쿠키를 전송 허용 (단, secure=True 필수)
+
 ------------------------------
 cors 설정
 ------------------------------
@@ -953,7 +957,7 @@ class CustomCSRFMiddleware:
 -----------------------------
 Ubuntu 서버에서 CI/CD 사용해 배포 설정하기
 -----------------------------
-ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.72.164
+ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.87.234
 chmod 400 ~/Downloads/onda-key-aws.pem
 
 mv ~/Downloads/wistar.pem ~/.ssh
@@ -2094,6 +2098,14 @@ SWAGGER_EXCLUDED_APPS = [
     # "apps.user.views",
 ]  # 제외할 앱 이름
 
+# ASGI 환경에서 request scheme이 제대로 전달되지 않음.
+# ASGI 설정 후 배포 서버에서 스웨거가 https 자동 인식을 안할 때 다음 설정 추가
+# settings.py
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# nginx 설정에 다음 설정 필수
+# nginx.conf
+proxy_set_header X-Forwarded-Proto $scheme; (include proxy_params 설정에 포함)
+
 
 쿼리 파라미터로 JWT 전달이 위험한 이유
 문제점                     설명
@@ -2108,3 +2120,111 @@ error_log /var/log/nginx/error.log;
 
 gunicorn 로그 확인
 cat /var/log/gunicorn/error.log
+
+
+-----------------------------------------------
+.git/config요청 감지
+이런 식의 요청은 대표적인 사전 공격 탐지 시도(Scanning)
+-----------------------------------------------
+
+Invalid HTTP_HOST header: '13.209.72.164'. You may need to add '13.209.72.164' to ALLOWED_HOSTS.
+Bad Request: /.git/config
+이건 무슨 의미냐면?
+누군가 http://13.209.72.164/.git/config에 직접 접속 시도함
+일반적으로 봇 또는 해커가 Git 저장소 노출 여부를 스캔 중
+Django는 해당 IP를 ALLOWED_HOSTS에 등록하지 않아서 DisallowedHost 예외 발생
+
+참고 https://www.dailysecu.com/news/articleView.html?idxno=160711
+
+/.git/config	저장소 정보, origin(Git 리모트 주소) 노출
+/.git/HEAD	현재 브랜치 노출
+/.git/objects/...	blob 통해 소스코드 전체 복원 가능
+
+특히, 과거 커밋에 실수로 민감 정보가 포함되었다면, 공격자는 git log, git show, git diff 복원으로 찾아낼 수 있습니다.
+
+root로 프로젝트 루트 사용	❌ 금지
+권한 허용 시 접근 가능
+location /static/ {
+    root /home/ubuntu/프로젝트 루트 디렉터리;
+}
+http://yourdomain.com/static/../.git/config
+→ 실제로는 /home/ubuntu/프로젝트 루트 디렉터리/../.git/config → /home/ubuntu/.git/config
+
+# 숨김파일 (.git, .env 등) 차단 설정
+location ~ /\.(?!well-known).* {
+    deny all;
+}
+# 디렉터리 목록 노출 방지 (기본설정)
+autoindex off;
+
+요청 횟수 제한 (Rate Limiting)
+# 1초당 10개 요청 허용, 최대 20개까지 버스트 허용 (IP 기준)
+limit_req_zone $binary_remote_addr zone=addr_limit:10m rate=10r/s;
+
+server {
+    location / {
+        limit_req zone=addr_limit burst=20 nodelay;
+        ...
+    }
+}
+
+# User-Agent 기반 크롤링 봇 차단
+if ($http_user_agent ~* (python|curl|wget|scrapy|bot|crawl)) {
+    return 403;
+}
+
+# 의심 IP 차단 (여러줄 가능)
+deny 123.45.67.89;
+
+
+# HTTP 요청을 HTTPS로 리디렉션
+server {
+    listen 80;
+    server_name api.ondamoim.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+
+------------------
+스왑 메모리 설정
+------------------
+
+스왑 메모리 설정 방법 (예: 1GB 스왑 생성)
+1. 스왑 파일 생성 (1GB)
+sudo fallocate -l 1G /swapfile
+fallocate 명령이 안 될 경우엔 다음 명령을 사용하세요:
+sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
+
+2. 스왑 파일 권한 설정
+sudo chmod 600 /swapfile
+
+3. 스왑 영역으로 지정
+sudo mkswap /swapfile
+
+4. 스왑 활성화
+sudo swapon /swapfile
+
+5. 스왑 적용 확인
+free -m
+Swap: 항목이 생기면 성공입니다.
+
+6. 재부팅 후에도 자동 적용되게 하기
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+
+sudo mount -a
+sudo swapon --show
+
+
+🔄 스왑 비활성화 / 제거 (원할 경우)
+sudo swapoff /swapfile
+sudo rm /swapfile
+sudo sed -i '/\/swapfile/d' /etc/fstab
+

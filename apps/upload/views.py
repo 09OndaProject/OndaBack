@@ -17,6 +17,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from utils.pagination import CustomPageNumberPagination
+
 from .models import File
 from .serializers import FileSerializer
 
@@ -29,6 +31,7 @@ class FileListView(ListModelMixin, GenericAPIView):
     permission_classes = [IsAuthenticated]  # 인증된 사용자만 데이터 접근 가능
     authentication_classes = [JWTAuthentication]  # JWT 인증
     serializer_class = FileSerializer
+    pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):
 
@@ -79,7 +82,7 @@ class FileUploadView(CreateAPIView):
         ids = [file["id"] for file in response_serializer.data]
 
         return Response(
-            {"message": "업로드 성공", "ids": ids},
+            {"message": "파일 업로드를 성공했습니다.", "ids": ids},
             status=status.HTTP_201_CREATED,
             headers=headers,
         )
@@ -189,7 +192,7 @@ class FileDeleteView(DestroyModelMixin, GenericAPIView):
         files.delete()
 
         return Response(
-            {"message": "삭제 성공", "deleted_count": deleted_count},
+            {"message": "파일 삭제를 성공했습니다.", "deleted_count": deleted_count},
             status=status.HTTP_200_OK,
         )
 
