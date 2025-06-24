@@ -39,10 +39,10 @@ class IsOwnerOrAdminOrReadOnly(permissions.BasePermission):
             obj = view.get_object()
 
         # obj = view.get_object(request, *view.args, **view.kwargs)
-        if hasattr(obj, "user_id"):
-            return request.user == obj.user
-        elif request.user.role == UserRole.ADMIN.value:
+        if request.user.role == UserRole.ADMIN.value:
             return True
+        elif hasattr(obj, "user_id"):
+            return request.user == obj.user
         else:
             return False
 
