@@ -118,6 +118,8 @@ class MeetUserListSerializer(serializers.ModelSerializer):
             "max_people",
             "current_people",
             "application_deadline",
+            "meet_rating",
+            "review_count",
             "status",
             "session_count",
         ]
