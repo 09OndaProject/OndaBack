@@ -84,7 +84,7 @@ class MeetListCreateView(generics.ListCreateAPIView):
             openapi.Parameter(
                 "status",
                 openapi.IN_QUERY,
-                type=openapi.TYPE_STRING,
+                type=openapi.TYPE_BOOLEAN,
                 description="모집 상태",
             ),
         ],
