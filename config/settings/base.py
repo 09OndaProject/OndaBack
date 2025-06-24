@@ -273,6 +273,8 @@ SWAGGER_SETTINGS = {
         }
     },
 }
+# DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB (요청 본문 전체 용량 제한)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB (파일 개별 용량 제한)
 
 
 # Email

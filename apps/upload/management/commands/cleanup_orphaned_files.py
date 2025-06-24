@@ -27,6 +27,7 @@ class Command(BaseCommand):
             return
 
         if settings.DJANGO_ENV == "prod":
+            self.stdout.write("배포 환경 실행")
             # S3 클라이언트 초기화
             s3_client = boto3.client(
                 "s3",
@@ -66,6 +67,7 @@ class Command(BaseCommand):
             # 데이터베이스에서 한 번에 삭제
             files_to_delete.delete()
         else:
+            self.stdout.write("로컬 환경 실행")
             for file in files_to_delete:
                 file_path = file.file.name
                 try:
@@ -78,7 +80,7 @@ class Command(BaseCommand):
 
 
 # 명령어
-# python manage.py cleanup_orphaned_files
+# python3 manage.py cleanup_orphaned_files
 
 # 명령어 등록
 # 아래 경로에 파일이 존재하면 파일명을 기준으로 자동 등록

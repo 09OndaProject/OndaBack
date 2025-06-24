@@ -2228,3 +2228,49 @@ sudo swapoff /swapfile
 sudo rm /swapfile
 sudo sed -i '/\/swapfile/d' /etc/fstab
 
+
+주기 실행 설정 (서버 시간 UTC 기준)
+
+# crontab 수정
+crontab -e
+# 한국 시간으로 06시 설정
+0 21 * * * /home/ubuntu/.pyenv/versions/3.13.1/envs/onda/bin/python /home/ubuntu/OndaBack/manage.py cleanup_orphaned_files >> /home/ubuntu/cleanup.log 2>&1
+
+# 한국 시간으로 06시 설정 & 날짜별 분기
+0 21 * * * /home/ubuntu/.pyenv/versions/3.13.1/envs/onda/bin/python /home/ubuntu/OndaBack/manage.py cleanup_orphaned_files >> /home/ubuntu/cleanup_$(date +\%Y\%m\%d).log 2>&1
+
+
+# 등록된 crontab 목록 확인
+crontab -l
+
+# 주기 실행 로그 확인
+cat /home/ubuntu/cleanup.log
+tail -f /home/ubuntu/cleanup.log
+
+# 로그 파일 관리 설정 수정
+sudo nano /etc/logrotate.d/cleanup
+
+/home/ubuntu/cleanup.log {
+    monthly            # ✔️ 한 달마다 회전
+    rotate 1           # ✔️ 1개만 유지 (즉시 이전 파일 삭제)
+    missingok          # 파일이 없어도 에러 발생 X
+    notifempty         # 로그가 비어있으면 회전 X
+    create 0640 ubuntu ubuntu   # 새 파일 권한, 소유자 설정
+}
+
+이 외 설정
+    daily              # 매일 회전
+    compress           # 오래된 파일은 gzip 압축
+
+
+데이터 베이스에만 존재하고 실존하지 않는 파일 목록 레코드 삭제
+cleanup_db_orphaned_files
+
+S3 Event 기반 처리 (고급)
+AWS S3 Event Notification + Lambda + SQS를 사용하면
+파일이 S3에서 삭제될 때 자동으로 Django 서버에 삭제 요청을 전송할 수도 있습니다.
+
+
+# 업로드 파일 용량 제한 (기본값 2.5MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB (요청 본문 전체 용량 제한)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB (파일 개별 용량 제한)
