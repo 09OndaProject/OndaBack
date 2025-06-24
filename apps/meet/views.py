@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.options.models import Area
-from utils.permissions import IsOwnerOrReadOnly, LeaderOnly
+from utils.permissions import IsOwnerOrAdminOrReadOnly, LeaderOnly
 
 from .models import Meet, MeetApply
 from .serializers import (
@@ -155,7 +155,7 @@ class MeetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         "user", "file", "category", "digital_level"
     ).prefetch_related("applications__user__file")
     lookup_url_kwarg = "meet_id"
-    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrAdminOrReadOnly]
 
     def get_serializer_class(self):
         if self.request.method == "PATCH":
