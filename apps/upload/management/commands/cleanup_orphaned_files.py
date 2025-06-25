@@ -87,7 +87,3 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("DB에 없는 S3 파일 일괄 삭제 완료"))
         else:
             self.stdout.write("삭제할 파일이 없습니다.")
-
-
-
-

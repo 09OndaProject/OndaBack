@@ -50,9 +50,7 @@ class Command(BaseCommand):
                     ContinuationToken=continuation_token,
                 )
             else:
-                response = s3_client.list_objects_v2(
-                    Bucket=bucket_name, Prefix=prefix
-                )
+                response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
 
             contents = response.get("Contents", [])
             for obj in contents:
