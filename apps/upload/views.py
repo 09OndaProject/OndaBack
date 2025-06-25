@@ -160,11 +160,13 @@ class FileDeleteView(DestroyModelMixin, GenericAPIView):
             # 파일과 썸네일의 S3 키 수집
             for file in files:
                 if file.file:
-                    file_key = file.file.name
+                    file_key = f"{file.file.storage.location}/{file.file.name}"
                     delete_objects.append({"Key": file_key})
 
                 if file.thumbnail:
-                    thumbnail_key = file.thumbnail.name
+                    thumbnail_key = (
+                        f"{file.thumbnail.storage.location}/{file.thumbnail.name}"
+                    )
                     delete_objects.append({"Key": thumbnail_key})
 
             # S3에서 일괄 삭제 (최대 1000개까지 한 번에 삭제 가능)
@@ -181,12 +183,7 @@ class FileDeleteView(DestroyModelMixin, GenericAPIView):
         else:
             for file in files:
                 # 파일 시스템에서 실제 파일들 삭제
-                # 필드가 존재하고 실제 파일이 있는 경우에만 삭제
-                if file.file and os.path.isfile(file.file.path):
-                    file.file.delete(save=False)
-
-                if file.thumbnail and os.path.isfile(file.thumbnail.path):
-                    file.thumbnail.delete(save=False)
+                file.delete(soft=False)
 
         # 데이터베이스에서 한 번에 삭제
         files.delete()
@@ -197,41 +194,9 @@ class FileDeleteView(DestroyModelMixin, GenericAPIView):
         )
 
 
-# def bulk_delete_s3_files(file_queryset):
-#     keys = [{"Key": file.file.name} for file in file_queryset if file.file.name]
-#
-#     options = settings.STORAGES["default"]["OPTIONS"]
-#
-#     s3 = boto3.client(
-#         "s3",
-#         aws_access_key_id=options["access_key"],
-#         aws_secret_access_key=options["secret_key"],
-#         region_name=options.get("region_name", "ap-northeast-2"),
-#     )
-#     bucket = options["bucket_name"]
-#
-#     if not keys:
-#         return
-#
-#     objects = [{"Key": key} for key in keys]
-#
-#     s3.delete_objects(
-#         Bucket=bucket,
-#         Delete={"Objects": objects, "Quiet": True},
-#     )
-
-
-# boto3를 사용해 여러 항목 한번에 삭제하는 예시
-# import boto3
-# s3 = boto3.client("s3")
-# response = s3.delete_objects(
-#     Bucket="your-bucket-name",
-#     Delete={
-#         "Objects": [
-#             {"Key": "uploads/image1.jpg"},
-#             {"Key": "uploads/image2.jpg"},
-#             {"Key": "uploads/image3.jpg"},
-#         ],
-#         "Quiet": True,  # 응답에서 성공 항목을 생략할지 여부
-#     },
-# )
+# files = File.objects.filter(...)	❌ 쿼리 미실행
+# files.count()	✅ 즉시 실행
+# len(files)	✅ 즉시 실행
+# for file in files:	✅ 즉시 실행
+# list(files)	✅ 즉시 실행
+# files.exists()	✅ 즉시 실행

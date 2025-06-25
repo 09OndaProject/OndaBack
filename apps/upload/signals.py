@@ -53,8 +53,8 @@ def auto_delete_file_if_unused(sender, instance, **kwargs):
     unused_files = [file for file in files_to_check if file.id not in used_file_ids]
 
     for file in unused_files:
-        # file.file.delete(save=False)  # 실제 파일 삭제
-        file.delete()  # File 모델 소프트 딜리트 후 모아서 처리
+
+        file.delete()
 
 
 # 모델의 삭제 동작 시그널 발생

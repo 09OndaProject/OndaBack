@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             model_name="file",
             name="file",
             field=models.FileField(
-                storage=apps.upload.models.MediaStorage,
+                # storage=apps.upload.models.MediaStorage,
                 upload_to=apps.upload.models.upload_to,
             ),
         ),
