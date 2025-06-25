@@ -32,10 +32,10 @@ class Command(BaseCommand):
         prefix_option = options.get("prefix")
 
         if prefix_option:
-            prefix = f"{prefix_option}/"
+            prefix = f"media/{prefix_option}/"
             self.stdout.write(f"[{prefix_option}] 경로만 검사합니다.")
         else:
-            prefix = ""  # 전체 검사
+            prefix = "media/"  # 전체 검사
             self.stdout.write("S3 전체 경로를 검사합니다.")
 
         s3_keys = set()
