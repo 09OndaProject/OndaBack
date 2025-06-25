@@ -2271,6 +2271,112 @@ AWS S3 Event Notification + Lambda + SQS를 사용하면
 파일이 S3에서 삭제될 때 자동으로 Django 서버에 삭제 요청을 전송할 수도 있습니다.
 
 
-# 업로드 파일 용량 제한 (기본값 2.5MB)
+# 업로드 파일 용량 제한
+장고 기본 설정 2.5MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB (요청 본문 전체 용량 제한)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB (파일 개별 용량 제한)
+ngnginx 용량 제한 기본값 1MB
+client_max_body_size 10M; 설정
+
+캐시 확인
+터미널에서
+curl -w "\nTime: %{time_total}\n" https://배포서버주소/api/options/age-groups
+
+curl -A 옵션으로 User-Agent를 브라우저처럼 위장하면 NGINX 필터에 걸리지 않습니다.
+curl -A "MyBrowser" -w "\nTime: %{time_total}\n" https://api.ondamoim.com/api/options/age-groups
+curl -A "MyBrowser" -w "\nTime: %{time_total}\n" https://api.ondamoim.com/api/options
+
+
+| 항목                 | 설명                               |
+| ------------------ | -------------------------------- |
+| 쿠키에 저장된 값          | CSRF 토큰의 원본 시크릿                  |
+| get\_token 반환 값    | 쿠키의 시크릿 값을 마스킹한 토큰               |
+| 클라이언트가 헤더에 보내야 할 값 | get\_token으로 발급한 마스킹된 토큰         |
+| 서버 검증 방식           | 요청 헤더의 마스킹된 토큰을 복호화 → 쿠키 시크릿과 비교 |
+
+Django는 **CSRF 시크릿(쿠키 값)**을 직접 사용하는 것이 아니라,
+👉 **시크릿을 "마스킹(Masking)"**해서 응답으로 전달합니다.
+
+이 마스킹 토큰은 **"동일한 시크릿이라도 매번 다른 토큰이 생성"**되도록 설계되어 있습니다.
+
+✔️ Django는 이걸 통해 더 강력한 CSRF 보안을 제공합니다.
+
+
+ Django CSRF 마스킹 토큰 생성 공식
+Django 내부 함수 _mask_cipher_secret(csrf_secret) 은 다음 과정을 거칩니다.
+랜덤한 마스크 값 생성
+시크릿 값 XOR 마스크 값 → 마스킹 토큰 생성
+최종 토큰 = (마스크 + 마스킹된 시크릿) → 클라이언트에 전달
+✔️ 즉, 토큰 자체는 "랜덤처럼 보이지만 실제로는 쿠키 시크릿에서 파생된 값"입니다.
+
+
+
+# 최종 nginx 설정
+server {
+    listen 80;
+    server_name api.ondamoim.com;
+
+     location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# 1초당 10개 요청 허용, 최대 20개까지 버스트 허용 (IP 기준)
+limit_req_zone $binary_remote_addr zone=addr_limit:10m rate=10r/s;
+
+# HTTPS 설정
+server {
+    listen 443 ssl;
+    server_name api.ondamoim.com;
+
+    ssl_certificate /etc/letsencrypt/live/api.ondamoim.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.ondamoim.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # User-Agent 기반 크롤링 봇 차단
+    if ($http_user_agent ~* (python|curl|wget|scrapy|bot|crawl)) {
+        return 403;
+    }
+
+    # 의심 IP 차단 (여러줄 가능)
+    # deny 123.45.67.89;
+    # deny 123.45.67.89;
+
+    # 숨김파일 (.git, .env 등) 차단
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+    # 디렉터리 목록 노출 방지(기본설정 off)
+    autoindex off;
+
+    # 업로드 용량 제한 설정 (기본값 1MB)
+    client_max_body_size 10M;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+        limit_req zone=addr_limit burst=20 nodelay;
+    }
+
+    location /ws/ {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        include proxy_params;
+        proxy_pass http://unix:/srv/gunicorn/gunicorn.sock;
+    }
+}
+
+
+도메인 ondamoim.com의 레코드 설정
+A레코드 설정에 추가 서브도메인.도메인.com   라우팅 대상 서버ip주소
+CNAME레코드에 설정 추가
+
+프론트 vercel 배포 (무료기준)
+여러 프로젝트를 등록하고 깃 허브 연동을 할 순 있지만

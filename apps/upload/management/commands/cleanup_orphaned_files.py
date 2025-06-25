@@ -17,6 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         # 삭제 기준: soft delete 후 7일 지난 파일들
         threshold = now() - timedelta(days=7)
+        # threshold = now()
 
         # 7일 전보다 삭제일이 작은 것들 (7일이 지난 파일들) (7일이 지나지 않으면 삭제일이 더 큼)
         files_to_delete = File.objects.filter(is_deleted=True, deleted_at__lt=threshold)
