@@ -38,10 +38,14 @@ def auto_delete_file_if_unused(sender, instance, **kwargs):
 
     file_ids = [file.id for file in files_to_check]
 
-    queryset1 = User.objects.filter(file__in=file_ids).values_list('file_id', flat=True)
-    queryset2 = PostImage.objects.filter(file__in=file_ids).values_list('file_id', flat=True)
-    queryset3 = LeaderCertificate.objects.filter(file__in=file_ids).values_list('file_id', flat=True)
-    queryset4 = Meet.objects.filter(file__in=file_ids).values_list('file_id', flat=True)
+    queryset1 = User.objects.filter(file__in=file_ids).values_list("file_id", flat=True)
+    queryset2 = PostImage.objects.filter(file__in=file_ids).values_list(
+        "file_id", flat=True
+    )
+    queryset3 = LeaderCertificate.objects.filter(file__in=file_ids).values_list(
+        "file_id", flat=True
+    )
+    queryset4 = Meet.objects.filter(file__in=file_ids).values_list("file_id", flat=True)
 
     used_file_ids = queryset1.union(queryset2, queryset3, queryset4)
 
