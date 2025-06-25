@@ -73,7 +73,7 @@ class Command(BaseCommand):
 
         for file in orphaned_files:
             total_checked += 1
-            s3_key = file.file.name  # 실제 S3 Key
+            s3_key = file.file.storage.location + file.file.name  # 실제 S3 Key
 
             if s3_key not in s3_keys:
                 self.stdout.write(f"파일 없음. DB 삭제: {s3_key}")
