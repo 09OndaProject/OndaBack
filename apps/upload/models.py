@@ -14,19 +14,6 @@ from django.db import models
 from django.utils import timezone
 from PIL import Image as PilImage
 
-if settings.DJANGO_ENV == "prod":
-    from storages.backends.s3boto3 import S3Boto3Storage
-
-    class MediaStorage(S3Boto3Storage):
-        location = "media"
-        file_overwrite = False  # 파일 덮어쓰기 허용x 랜덤한 문자열 자동 추가
-
-else:
-    from django.core.files.storage import FileSystemStorage
-
-    class MediaStorage(FileSystemStorage):
-        location = "media"
-
 
 def upload_to(instance, filename):  # 인스턴스는 file모델. filename은 저장된 파일의 이름
     category = instance.category if instance.category else "other"
@@ -64,17 +51,13 @@ class File(models.Model):
         "user.User", on_delete=models.SET_NULL, null=True, related_name="files"
     )
     category = models.CharField(max_length=20, choices=FileCategory.choices, null=True)
-    file = models.FileField(
-        storage=MediaStorage, upload_to=upload_to, blank=True, null=True
-    )
+    file = models.FileField(upload_to=upload_to, blank=True, null=True)
     file_type = models.CharField(
         max_length=10, choices=FILE_TYPE_CHOICES, blank=True, null=True
     )  # file, video, file
     file_name = models.CharField(max_length=255, blank=True, null=True)
     file_size = models.BigIntegerField(blank=True, null=True)
-    thumbnail = models.ImageField(
-        storage=MediaStorage, upload_to=thumbnail_upload_to, blank=True, null=True
-    )
+    thumbnail = models.ImageField(upload_to=thumbnail_upload_to, blank=True, null=True)
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
@@ -195,9 +178,10 @@ class File(models.Model):
             self.save()
         else:
             # 실제 파일이 존재하면 삭제
-            if self.file and os.path.isfile(self.file.path):
+            # os.path.isfile(self.thumbnail.path) 조건 붙이면 s3에서 에러남
+            if self.file:
                 self.file.delete(save=False)
-            if self.thumbnail and os.path.isfile(self.thumbnail.path):
+            if self.thumbnail:
                 self.thumbnail.delete(save=False)
             # DB 레코드 삭제
             super().delete(using=using, keep_parents=keep_parents)

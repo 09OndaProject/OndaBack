@@ -27,10 +27,11 @@ DATABASES = {
 }
 
 # S3 사용시 설정
-# (STORAGES['staticfiles'] 설정이 존재하면,
+# STORAGES['staticfiles'] 설정이 존재하면,
 # Django는 STATIC_ROOT를 무시하고 대신 S3에 업로드.
-# default 저장할 때 경로
+# default 파일 저장할 때 경로
 # staticfiles는 collectstatic할 때 사용하는 경로
+# 참조 https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html#settings
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
@@ -42,6 +43,7 @@ STORAGES = {
             "custom_domain": f'{ENV.get("S3_STORAGE_BUCKET_NAME", "")}.s3.amazonaws.com',
             "location": "media",
             "default_acl": "public-read",
+            "file_overwrite": False,
         },
     },
     "staticfiles": {
