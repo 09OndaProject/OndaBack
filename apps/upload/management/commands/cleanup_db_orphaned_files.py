@@ -5,6 +5,7 @@ import os
 import boto3
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from apps.upload.models import File
 
@@ -21,6 +22,15 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        #
+        prefix_option = options.get("prefix")
+        if prefix_option:
+            prefix = f"media/{prefix_option}/"
+            self.stdout.write(f"[{prefix_option}] 경로만 검사합니다.")
+        else:
+            prefix = "media/"  # 전체 검사
+            self.stdout.write("S3 전체 경로를 검사합니다.")
+
         s3_client = boto3.client(
             "s3",
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -29,16 +39,7 @@ class Command(BaseCommand):
         )
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
-        prefix_option = options.get("prefix")
-
-        if prefix_option:
-            prefix = f"media/{prefix_option}/"
-            self.stdout.write(f"[{prefix_option}] 경로만 검사합니다.")
-        else:
-            prefix = "media/"  # 전체 검사
-            self.stdout.write("S3 전체 경로를 검사합니다.")
-
-        s3_keys = set()
+        s3_keys = list()
         continuation_token = None
 
         while True:
@@ -49,11 +50,13 @@ class Command(BaseCommand):
                     ContinuationToken=continuation_token,
                 )
             else:
-                response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+                response = s3_client.list_objects_v2(
+                    Bucket=bucket_name, Prefix=prefix
+                )
 
             contents = response.get("Contents", [])
             for obj in contents:
-                s3_keys.add(obj["Key"])
+                s3_keys.append(obj["Key"])
 
             if response.get("IsTruncated"):
                 continuation_token = response.get("NextContinuationToken")
@@ -62,29 +65,17 @@ class Command(BaseCommand):
 
         self.stdout.write(f"S3에서 {len(s3_keys)}개 파일 로딩 완료")
 
-        # DB에서 is_deleted=True 조회
-        orphaned_files = File.objects.filter(is_deleted=True)
+        # 존재 하지 않는 파일 데이터베이스에서 검색
+        orphaned_files = File.objects.exclude(file__in=s3_keys)
 
         if prefix_option:
-            orphaned_files = orphaned_files.filter(file__startswith=prefix)
+            orphaned_files = orphaned_files.filter(file__startswith=prefix_option)
 
-        total_checked = 0
-        total_deleted = 0
+        # deleted_count : 삭제된 전체 레코드 개수 (정수)
+        # deleted_detail : 각 모델별 삭제 개수 딕셔너리
+        deleted_count, deleted_detail = orphaned_files.delete()
 
-        for file in orphaned_files:
-            total_checked += 1
-            s3_key = file.file.storage.location + file.file.name  # 실제 S3 Key
-
-            if s3_key not in s3_keys:
-                self.stdout.write(f"파일 없음. DB 삭제: {s3_key}")
-                file.delete(soft=False)
-                total_deleted += 1
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"총 {total_checked}개 중 {total_deleted}개 DB 삭제 완료"
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"총 {deleted_count}개 DB 삭제 완료"))
 
 
 # 명령어

@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
             name="file",
             field=models.FileField(
                 null=True,
-                storage=apps.upload.models.MediaStorage,
+                # storage=apps.upload.models.MediaStorage,
                 upload_to=apps.upload.models.upload_to,
             ),
         ),

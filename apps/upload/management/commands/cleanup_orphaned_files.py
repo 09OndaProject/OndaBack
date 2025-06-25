@@ -1,88 +1,93 @@
-# cleanup_orphaned_files.py
-
 import os
-from datetime import timedelta
 
 import boto3
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils.timezone import now
 
 from apps.upload.models import File
 
 
 class Command(BaseCommand):
-    help = "Soft-deleted 파일 중 일정 기간 지난 것을 실제 삭제 (DB + 저장소)"
+    help = "DB에 존재하지 않는 S3 파일을 일괄 삭제"
 
-    def handle(self, *args, **kwargs):
-        # 삭제 기준: soft delete 후 7일 지난 파일들
-        threshold = now() - timedelta(days=7)
-        # threshold = now()
+    def handle(self, *args, **options):
 
-        # 7일 전보다 삭제일이 작은 것들 (7일이 지난 파일들) (7일이 지나지 않으면 삭제일이 더 큼)
-        files_to_delete = File.objects.filter(is_deleted=True, deleted_at__lt=threshold)
+        # S3 클라이언트 초기화
+        s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME,
+        )
 
-        total = files_to_delete.count()
-        if total == 0:
-            self.stdout.write("삭제할 파일이 없습니다.")
-            return
+        # S3 버킷 이름
+        bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+        prefix = "media/"
 
-        if settings.DJANGO_ENV == "prod":
-            self.stdout.write("배포 환경 실행")
-            # S3 클라이언트 초기화
-            s3_client = boto3.client(
-                "s3",
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_S3_REGION_NAME,
-            )
+        self.stdout.write("DB에 존재하지 않는 S3 파일 정리 시작")
 
-            # S3 버킷 이름
-            bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+        # DB에 존재하는 파일 목록 (S3 Key)
+        valid_keys = set(
+            f"{file.file.storage.location}/{file.file.name}"
+            for file in File.objects.all()
+            if file.file
+        )
 
-            # 삭제할 파일 키 목록
-            delete_objects = []
+        # S3에 존재하는 모든 파일 목록
+        s3_keys = set()
+        continuation_token = None
 
-            # 파일과 썸네일의 S3 키 수집
-            for file in files_to_delete:
-                if file.file:
-                    file_key = file.file.storage.location + file.file.name
-                    delete_objects.append({"Key": file_key})
+        while True:
+            if continuation_token:
+                response = s3_client.list_objects_v2(
+                    Bucket=bucket_name,
+                    Prefix=prefix,
+                    ContinuationToken=continuation_token,
+                )
+            else:
+                response = s3_client.list_objects_v2(
+                    Bucket=bucket_name,
+                    Prefix=prefix,
+                )
 
-                if file.thumbnail:
-                    thumbnail_key = file.file.storage.location + file.thumbnail.name
-                    delete_objects.append({"Key": thumbnail_key})
+            contents = response.get("Contents", [])  # S3 파일 목록
+            for obj in contents:
+                s3_keys.add(obj["Key"])
 
-            # S3에서 일괄 삭제 (최대 1000개까지 한 번에 삭제 가능)
-            if delete_objects:
-                # 1000개씩 나누어서 처리
-                for i in range(0, len(delete_objects), 1000):
-                    try:
-                        s3_client.delete_objects(
-                            Bucket=bucket_name,
-                            Delete={"Objects": delete_objects[i : i + 1000]},
-                        )
-                    except Exception as e:
-                        self.stderr.write(f"S3 삭제 중 오류 발생")
+            if response.get(
+                "IsTruncated"
+            ):  # 현재 요청으로 다 못 가져왔는지 여부 (1000개 이상일 시)
+                continuation_token = response.get(
+                    "NextContinuationToken"
+                )  # 다음 페이지를 가져오기 위한 토큰 (S3가 응답으로 주는 페이징 키)
+            else:
+                break
 
-            # 데이터베이스에서 한 번에 삭제
-            files_to_delete.delete()
+        self.stdout.write(f"S3 총 파일 수: {len(s3_keys)}")
+        self.stdout.write(f"DB에 존재하는 파일 수: {len(valid_keys)}")
+
+        # DB에 없는 S3 파일
+        orphaned_keys = list(s3_keys - valid_keys)
+
+        self.stdout.write(f"삭제할 파일 수: {len(orphaned_keys)}")
+
+        if orphaned_keys:
+            for i in range(0, len(orphaned_keys), 1000):
+                batch = orphaned_keys[i : i + 1000]
+                delete_objects = [{"Key": key} for key in batch]
+
+                response = s3_client.delete_objects(
+                    Bucket=bucket_name,
+                    Delete={"Objects": delete_objects},
+                )
+
+                deleted = response.get("Deleted", [])
+                self.stdout.write(f"삭제 완료: {len(deleted)}개 (Batch {i//1000 + 1})")
+
+            self.stdout.write(self.style.SUCCESS("DB에 없는 S3 파일 일괄 삭제 완료"))
         else:
-            self.stdout.write("로컬 환경 실행")
-            for file in files_to_delete:
-                file_path = file.file.name
-                try:
-                    self.stdout.write(f"삭제 중: {file_path}")
-                    file.delete(soft=False)  # 실제 파일 + DB 삭제
-                except Exception as e:
-                    self.stderr.write(f"삭제 실패: {file_path} -> {e}")
-
-        self.stdout.write(self.style.SUCCESS(f"총 {total}개 파일 정리 완료"))
+            self.stdout.write("삭제할 파일이 없습니다.")
 
 
-# 명령어
-# python3 manage.py cleanup_orphaned_files
 
-# 명령어 등록
-# 아래 경로에 파일이 존재하면 파일명을 기준으로 자동 등록
-# <app>/management/commands/*.py
+
