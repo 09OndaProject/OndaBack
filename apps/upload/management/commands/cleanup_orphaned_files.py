@@ -46,11 +46,11 @@ class Command(BaseCommand):
             # 파일과 썸네일의 S3 키 수집
             for file in files_to_delete:
                 if file.file:
-                    file_key = file.file.name
+                    file_key = file.file.storage.location + file.file.name
                     delete_objects.append({"Key": file_key})
 
                 if file.thumbnail:
-                    thumbnail_key = file.thumbnail.name
+                    thumbnail_key = file.file.storage.location + file.thumbnail.name
                     delete_objects.append({"Key": thumbnail_key})
 
             # S3에서 일괄 삭제 (최대 1000개까지 한 번에 삭제 가능)
