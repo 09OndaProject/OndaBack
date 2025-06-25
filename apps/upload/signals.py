@@ -32,28 +32,25 @@ def auto_delete_file_if_unused(sender, instance, **kwargs):
         for file in related_files:
             files_to_check.append(file.file)
 
-    # 각각의 파일이 다른 모델에서도 사용 중인지 확인하고 미사용이면 삭제
-    for file in files_to_check:
-        file_ids = [f.id for f in files_to_check]
+    # 삭제할 파일이 없으면 종료
+    if not files_to_check:
+        return
 
-        # 참조 중인 file id들을 한 번에 모두 조회
-        used_file_ids = set().union(
-            User.objects.filter(file_id__in=file_ids).values_list("file_id", flat=True),
-            PostImage.objects.filter(file_id__in=file_ids).values_list(
-                "file_id", flat=True
-            ),
-            LeaderCertificate.objects.filter(file_id__in=file_ids).values_list(
-                "file_id", flat=True
-            ),
-            Meet.objects.filter(file_id__in=file_ids).values_list("file_id", flat=True),
-        )
+    file_ids = [file.id for file in files_to_check]
 
-        # 실제로 삭제 대상인 파일만 추리기
-        unused_files = [f for f in files_to_check if f.id not in used_file_ids]
+    queryset1 = User.objects.filter(file__in=file_ids).values_list('file_id', flat=True)
+    queryset2 = PostImage.objects.filter(file__in=file_ids).values_list('file_id', flat=True)
+    queryset3 = LeaderCertificate.objects.filter(file__in=file_ids).values_list('file_id', flat=True)
+    queryset4 = Meet.objects.filter(file__in=file_ids).values_list('file_id', flat=True)
 
-        if file in unused_files:
-            # file.file.delete(save=False)  # 실제 파일 삭제
-            file.delete()  # File 모델 소프트 딜리트 후 모아서 처리
+    used_file_ids = queryset1.union(queryset2, queryset3, queryset4)
+
+    # 실제로 삭제 대상인 파일만 추리기
+    unused_files = [file for file in files_to_check if file.id not in used_file_ids]
+
+    for file in unused_files:
+        # file.file.delete(save=False)  # 실제 파일 삭제
+        file.delete()  # File 모델 소프트 딜리트 후 모아서 처리
 
 
 # 모델의 삭제 동작 시그널 발생
@@ -74,3 +71,22 @@ def auto_delete_file_if_unused(sender, instance, **kwargs):
 # m2m_changed - ManyToManyField 변경될 때 (add, remove, clear 등 발생 시점에 호출) -> 관계 변경 추적 가능
 
 # any() = or
+
+# 쿼리 직접 실행
+# # 각각의 파일이 다른 모델에서도 사용 중인지 확인하고 미사용이면 삭제
+# from django.db import connection
+#     with connection.cursor() as cursor:
+#         cursor.execute('''
+#             SELECT file_id FROM "user" WHERE file_id IN %s
+#             UNION
+#             SELECT file_id FROM "posts_postimage" WHERE file_id IN %s
+#             UNION
+#             SELECT file_id FROM "leaders_leadercertificate" WHERE file_id IN %s
+#             UNION
+#             SELECT file_id FROM "meet_meet" WHERE file_id IN %s
+#         ''', [tuple(file_ids), tuple(file_ids), tuple(file_ids), tuple(file_ids)])
+#         rows = cursor.fetchall()
+#     # 쿼리 결과 [(1,), (2,), (3,), ...]
+#
+#     # 쿼리 결과를 집합로 변환
+#     used_file_ids = set(row[0] for row in rows)
