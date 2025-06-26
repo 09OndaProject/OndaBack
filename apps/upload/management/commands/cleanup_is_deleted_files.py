@@ -1,4 +1,4 @@
-# cleanup_orphaned_files.py
+# cleanup_is_deleted_files.py
 
 import os
 from datetime import timedelta

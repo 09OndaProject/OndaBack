@@ -48,7 +48,7 @@ project_name/
 │   └── .env.prod           # 배포 환경에서 서버 구동 및 테스트 시 필요한 환경변수
 ├── resources/              # 초기 설정 파일 및 스크립트, nginx, docker, kubernetes 의 yaml 파일
 │   ├── nginx/
-│   │   └── nginx.conf      # 모델 정의
+│   │   └── nginx.conf      # Nginx 웹 서버의 전역 설정 파일
 │   ├── docker/
 │   │   ├── dockerfile      # 도커 이미지 빌드 파일
 │   │   └── docker-compose.yml   # 도커 컨테이너 정의 파일
@@ -957,8 +957,12 @@ class CustomCSRFMiddleware:
 -----------------------------
 Ubuntu 서버에서 CI/CD 사용해 배포 설정하기
 -----------------------------
+# aws
 ssh -i ~/Downloads/onda-key-aws.pem ubuntu@13.209.87.234
 chmod 400 ~/Downloads/onda-key-aws.pem
+# naver
+ssh -i ~/Downloads/onda-key-naver.pem ubuntu@211.188.49.225
+chmod 400 ~/Downloads/onda-key-naver.pem
 
 mv ~/Downloads/wistar.pem ~/.ssh
 # 만약 ~/.ssh 경로가없다면 .ssh 폴더를 생성해줘야합니다.
@@ -2233,8 +2237,11 @@ sudo sed -i '/\/swapfile/d' /etc/fstab
 
 # crontab 수정
 crontab -e
-# 한국 시간으로 06시 설정
-0 21 * * * /home/ubuntu/.pyenv/versions/3.13.1/envs/onda/bin/python /home/ubuntu/OndaBack/manage.py cleanup_orphaned_files >> /home/ubuntu/cleanup.log 2>&1
+# 매일 새벽 6시에 실행
+0 21 * * * cd /path/to/your/project && source venv/bin/activate && python manage.py cleanup_is_deleted_files >> /var/log/cleanup.log 2>&1
+
+# 매주 일요일 새벽 4시에 S3-데이터베이스 동기화
+0 19 * * 0 cd /path/to/your/project && source venv/bin/activate && python manage.py cleanup_db_orphaned_files >> /var/log/cleanup_sync.log 2>&1
 
 # 한국 시간으로 06시 설정 & 날짜별 분기
 0 21 * * * /home/ubuntu/.pyenv/versions/3.13.1/envs/onda/bin/python /home/ubuntu/OndaBack/manage.py cleanup_orphaned_files >> /home/ubuntu/cleanup_$(date +\%Y\%m\%d).log 2>&1
