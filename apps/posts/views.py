@@ -4,6 +4,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from utils.pagination import CustomPageNumberPagination
+
 from .models import Comment, Like, Post
 from .serializers import CommentSerializer, PostSerializer
 
@@ -14,6 +16,7 @@ class PostListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ["title", "content"]
+    pagination_class = CustomPageNumberPagination
 
     @swagger_auto_schema(tags=["게시글"])
     def get(self, request, *args, **kwargs):
@@ -54,6 +57,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 class CommentListCreateView(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = CustomPageNumberPagination
 
     @swagger_auto_schema(tags=["댓글"])
     def get(self, request, *args, **kwargs):
