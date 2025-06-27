@@ -239,7 +239,7 @@ REST_FRAMEWORK = {
 # if DJANGO_ENV == "prod":
 #     CSRF_COOKIE_DOMAIN = ".ondamoim.com"
 #     CSRF_COOKIE_SECURE = True
-    # CSRF_COOKIE_SAMESITE = "Strict"  # 기본값 "Lax"
+#     CSRF_COOKIE_SAMESITE = "Strict"  # 기본값 "Lax"
 
 # JWT 설정
 SIMPLE_JWT = {
