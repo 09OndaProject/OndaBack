@@ -236,17 +236,17 @@ REST_FRAMEWORK = {
 }
 
 # CSRF 토큰 설정
-if DJANGO_ENV == "prod":
-    CSRF_COOKIE_DOMAIN = ".ondamoim.com"
-    CSRF_COOKIE_SECURE = True
-    CSRF_COOKIE_SAMESITE = "Strict"  # 기본값 "Lax"
+# if DJANGO_ENV == "prod":
+#     CSRF_COOKIE_DOMAIN = ".ondamoim.com"
+#     CSRF_COOKIE_SECURE = True
+#     CSRF_COOKIE_SAMESITE = "Strict"  # 기본값 "Lax"
 
 # JWT 설정
 SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     # "ROTATE_REFRESH_TOKENS": True,  # 리프레시 토큰을 사용할 때마다 새로운 리프레시 토큰을 발급. 기본값 False
     "UPDATE_LAST_LOGIN": True,  # 라스트 로그인 활성화
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     # It will work instead of the default serializer(TokenObtainPairSerializer).
     "TOKEN_OBTAIN_SERIALIZER": "apps.user.serializers.jwt_serializers.OndaTokenObtainPairSerializer",

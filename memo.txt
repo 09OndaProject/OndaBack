@@ -2162,12 +2162,12 @@ location ~ /\.(?!well-known).* {
 autoindex off;
 
 요청 횟수 제한 (Rate Limiting)
-# 1초당 10개 요청 허용, 최대 20개까지 버스트 허용 (IP 기준)
+# 1초당 10개 요청 허용, 최대 5개까지 버스트 허용 (IP 기준)
 limit_req_zone $binary_remote_addr zone=addr_limit:10m rate=10r/s;
 
 server {
     location / {
-        limit_req zone=addr_limit burst=20 nodelay;
+        limit_req zone=addr_limit burst=5 nodelay;
         ...
     }
 }
@@ -2387,3 +2387,6 @@ CNAME레코드에 설정 추가
 
 프론트 vercel 배포 (무료기준)
 여러 프로젝트를 등록하고 깃 허브 연동을 할 순 있지만
+
+
+git push -u 브래치명
