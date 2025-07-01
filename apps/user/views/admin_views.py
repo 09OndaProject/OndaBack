@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db import connection
 from django.db.models import Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -47,7 +48,7 @@ class AdminUserViewSet(ModelViewSet):
             query = self.request.query_params
             q = Q()
 
-            # :=는 Python 3.8 이상에서 도입된 **"월러스 연산자 (walrus operator)"**입니다.
+            # :=는 Python 3.8 이상에서 도입된 "월러스 연산자 (walrus operator)"입니다.
             # 이 연산자는 할당과 동시에 표현식 안에서 변수 사용이 가능하게 해줍니다.
 
             if email := query.get("email"):
@@ -63,7 +64,7 @@ class AdminUserViewSet(ModelViewSet):
                 q &= Q(phone_number__icontains=phone_number)
 
             if date_of_birth := query.get("date_of_birth"):
-                q &= Q(date_of_birth=date_of_birth)  # 정확 일치
+                q &= Q(date_of_birth=date_of_birth)  # 정확하게 일치
 
             if area := query.get("area"):
                 q &= (
@@ -161,6 +162,12 @@ class AdminUserViewSet(ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+        # response = super().list(request, *args, **kwargs)
+        # # 쿼리 로그 확인
+        # for query in connection.queries:
+        #     print(query['sql'])
+        # print(f"총 실행 쿼리 수: {len(connection.queries)}")
+        # return response
 
     @swagger_auto_schema(
         tags=["관리자/유저"],
@@ -179,7 +186,7 @@ class AdminUserViewSet(ModelViewSet):
         """
         return super().retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(auto_schema=None)
+    @swagger_auto_schema(auto_schema=None)  # Swagger 표시 X
     def update(self, request, *args, **kwargs):
         # PUT 요청 (전체 수정)만 차단
         if not kwargs.get("partial", False):
